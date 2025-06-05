@@ -16,7 +16,8 @@ logger = logging.getLogger(__name__)
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app)  # Allow CORS for frontend-backend communication
+# Allow CORS for frontend-backend communication, specifically from Vercel origin
+CORS(app, origins=['https://local-lang-codes-1.vercel.app'])
 
 # Secret key for JWT
 app.config['SECRET_KEY'] = 'your-very-secret-key'  # Use a fixed secret key for consistent JWT
