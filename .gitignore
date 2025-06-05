@@ -1,0 +1,17 @@
+# Node.js
+node_modules/
+build/
+dist/
+.env
+
+# Python
+__pycache__/
+*.pyc
+venv/
+
+# IDE specific files (VS Code)
+.vscode/
+
+# User and history database files
+users.json
+generation_history.json
