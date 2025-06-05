@@ -18,7 +18,7 @@ const Navbar = () => {
 
   const fetchUserData = async (token) => {
     try {
-      const response = await fetch('http://localhost:5007/user', {
+      const response = await fetch('https://local-lang-codes-1-4vgm.onrender.com/user', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -95,7 +95,7 @@ const Navbar = () => {
         setIsLoadingNotifications(false);
         return;
       }
-      const response = await fetch('http://localhost:5007/history', {
+      const response = await fetch('https://local-lang-codes-1-4vgm.onrender.com/history', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

@@ -33,7 +33,7 @@ const Signup = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5007/signup', {
+      const response = await fetch('https://local-lang-codes-1-4vgm.onrender.com/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

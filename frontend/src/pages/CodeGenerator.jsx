@@ -46,7 +46,7 @@ const CodeGenerator = () => {
     setResult({ translatedPrompt: '', codeOutput: '', explanation: '' });
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5007/process', {
+      const response = await fetch('https://local-lang-codes-1-4vgm.onrender.com/process', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
