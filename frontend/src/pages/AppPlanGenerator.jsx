@@ -109,7 +109,7 @@ const AppPlanGenerator = () => {
     setResult({ translatedPrompt: '', appPlanOutput: '' });
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5003/generate_app_plan', {
+      const response = await fetch('https://local-lang-codes-1-4vgm.onrender.com/generate_app_plan', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -162,7 +162,7 @@ const AppPlanGenerator = () => {
     setGeneratedCodeResult({ codeOutput: '', explanation: '' });
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5003/generate_code_from_plan', {
+      const response = await fetch('https://local-lang-codes-1-4vgm.onrender.com/generate_code_from_plan', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
