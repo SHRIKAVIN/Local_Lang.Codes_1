@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 # Initialize Flask app
 app = Flask(__name__)
 # Allow CORS for frontend-backend communication, specifically from Vercel origin
-CORS(app, origins=['https://local-lang-codes-1.vercel.app'])
+CORS(app, origins=['https://local-lang-codes-1.vercel.app', 'http://localhost:5173'])
 
 # Secret key for JWT
 app.config['SECRET_KEY'] = 'your-very-secret-key'  # Use a fixed secret key for consistent JWT
@@ -200,7 +200,7 @@ def get_user(current_user):
 
 # API Keys
 SARVAM_API_KEY = 'sk_vyr4ze68_kzjm76DIOxG0dOQmmDDN1QMK'  # <-- your Sarvam API Key
-GROQ_API_KEY = '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'  # <-- your Groq API Key
+GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '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') # Using environment variable for API Key
 
 # Function: Translate using Sarvam
 def translate_to_english(user_input, source_language_code):
@@ -298,6 +298,89 @@ def explain_code(code, target_language):
     except Exception as e:
         logger.error(f"Explanation error: {str(e)}")
         return f"Error: {str(e)}"
+
+# Function: Generate App Plan using Groq
+def generate_app_plan_from_prompt(prompt):
+    logger.info(f"Starting app plan generation for prompt: {prompt}")
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "model": "llama3-70b-8192",
+        "messages": [
+            {"role": "system", "content": "You are an AI assistant specialized in creating detailed application blueprints in markdown format. Provide a clear structure including sections like Introduction, Features, Technologies, Architecture, and rough steps for implementation. The plan should be comprehensive and easy to understand."},
+            {"role": "user", "content": f"Create an app plan for: {prompt}. Provide the output in markdown format."}
+        ],
+        "temperature": 0.7,
+        "max_tokens": 2000
+    }
+    try:
+        logger.info("Sending request to Groq API for app plan...")
+        response = requests.post(url, headers=headers, json=data)
+        logger.info(f"Groq API App Plan Response Status: {response.status_code}")
+
+        if response.status_code != 200:
+            logger.error(f"Groq API App Plan Error: {response.text}")
+            return f"Error: API returned status code {response.status_code} - {response.text}"
+
+        response_json = response.json()
+        logger.info(f"Groq API App Plan Response: {response_json}")
+
+        if 'choices' in response_json and len(response_json['choices']) > 0:
+            app_plan_output = response_json['choices'][0]['message']['content']
+            logger.info(f"Successfully generated app plan: {app_plan_output[:100]}...")
+            return app_plan_output
+        else:
+            logger.error(f"Unexpected API response format for app plan: {response_json}")
+            return "Error: Unexpected API response format for app plan"
+    except Exception as e:
+        logger.error(f"App plan generation error: {str(e)}", exc_info=True)
+        return f"Error: {str(e)}"
+
+# Function: Generate Code from App Plan using Groq
+def generate_code_from_plan_text(app_plan_text):
+    logger.info(f"Starting code generation from app plan")
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "model": "llama3-70b-8192",
+        "messages": [
+            {"role": "system", "content": "You are an AI assistant specialized in generating code based on a provided application plan. Write the code based on the detailed blueprint. Provide clear and concise code."},
+            {"role": "user", "content": f"Generate code based on the following app plan:\n\n{app_plan_text}"}
+        ],
+        "temperature": 0.7,
+        "max_tokens": 4000  # Allow more tokens for code generation
+    }
+    try:
+        logger.info("Sending request to Groq API for code from plan...")
+        response = requests.post(url, headers=headers, json=data)
+        logger.info(f"Groq API Code from Plan Response Status: {response.status_code}")
+
+        if response.status_code != 200:
+            logger.error(f"Groq API Code from Plan Error: {response.text}")
+            return f"Error: API returned status code {response.status_code} - {response.text}", None
+
+        response_json = response.json()
+        logger.info(f"Groq API Code from Plan Response: {response_json}")
+
+        if 'choices' in response_json and len(response_json['choices']) > 0:
+            code_output = response_json['choices'][0]['message']['content']
+            # For simplicity, let's assume the explanation is part of the code comment or we generate a simple one
+            # A more advanced approach would be to make another API call for explanation if needed.
+            explanation = "Code generated based on the provided app plan." # Simple placeholder explanation
+            logger.info(f"Successfully generated code from plan: {code_output[:100]}...")
+            return code_output, explanation
+        else:
+            logger.error(f"Unexpected API response format for code from plan: {response_json}")
+            return "Error: Unexpected API response format for code from plan", None
+    except Exception as e:
+        logger.error(f"Code generation from plan error: {str(e)}", exc_info=True)
+        return f"Error: {str(e)}", None
 
 # Main API Route
 @app.route('/process', methods=['POST'])
@@ -412,6 +495,87 @@ def process():  # Removed current_user argument
         return jsonify({
             'error': f'An internal server error occurred: {str(e)}'
         }), 500
+
+# Generate App Plan route
+@app.route('/generate_app_plan', methods=['POST'])
+@token_required
+def generate_app_plan_route(current_user):
+    try:
+        data = request.json
+        user_input = data.get('user_input')
+        user_language_code = data.get('user_language_code')
+
+        if not user_input or not user_language_code:
+            return jsonify({'error': 'Missing user_input or user_language_code'}), 400
+
+        logger.info(f"Received request to generate app plan for user {current_user['email']}: Input='{user_input}', Lang='{user_language_code}'")
+
+        # Translate input if not English (assuming Groq works best with English prompts)
+        # Note: You might need to adjust the logic if Sarvam API is only for target language translation
+        # For simplicity, assuming we translate user_input to English for the Groq prompt
+        translated_prompt = translate_to_english(user_input, user_language_code) if user_language_code != 'en-US' else user_input # Assuming 'en-US' is English code
+
+        if translated_prompt.startswith("Translation Failed!"):
+             return jsonify({
+                'error': 'Translation failed. Cannot generate app plan.',
+                'translatedPrompt': translated_prompt,
+                'appPlanOutput': None
+            }), 500
+
+        app_plan_output = generate_app_plan_from_prompt(translated_prompt)
+
+        if app_plan_output.startswith("Error:"):
+            logger.error(f"App plan generation failed for user {current_user['email']}: {app_plan_output}")
+            return jsonify({
+                'error': f'App plan generation failed: {app_plan_output}',
+                'translatedPrompt': translated_prompt,
+                'appPlanOutput': None
+            }), 500
+
+        # Add generated app plan to history (optional, but good for tracking)
+        # add_to_history(current_user['email'], {'type': 'app_plan', 'input': user_input, 'output': app_plan_output})
+
+        return jsonify({
+            'translatedPrompt': translated_prompt, # Send the translated prompt back
+            'appPlanOutput': app_plan_output
+        })
+    except Exception as e:
+        logger.error(f"Error in generate_app_plan_route for user {current_user['email']}: {str(e)}", exc_info=True)
+        return jsonify({'error': 'An internal error occurred during app plan generation'}), 500
+
+# Generate Code from App Plan route
+@app.route('/generate_code_from_plan', methods=['POST'])
+@token_required
+def generate_code_from_plan_route(current_user):
+    try:
+        data = request.json
+        app_plan_text = data.get('app_plan_text')
+
+        if not app_plan_text:
+            return jsonify({'error': 'Missing app_plan_text'}), 400
+
+        logger.info(f"Received request to generate code from plan for user {current_user['email']}")
+
+        code_output, explanation = generate_code_from_plan_text(app_plan_text)
+
+        if code_output.startswith("Error:"):
+            logger.error(f"Code generation from plan failed for user {current_user['email']}: {code_output}")
+            return jsonify({
+                'error': f'Code generation failed: {code_output}',
+                'codeOutput': None,
+                'explanation': None
+            }), 500
+
+        # Add generated code to history (optional)
+        # add_to_history(current_user['email'], {'type': 'code_from_plan', 'input': app_plan_text, 'output': code_output})
+
+        return jsonify({
+            'codeOutput': code_output,
+            'explanation': explanation
+        })
+    except Exception as e:
+        logger.error(f"Error in generate_code_from_plan_route for user {current_user['email']}: {str(e)}", exc_info=True)
+        return jsonify({'error': 'An internal error occurred during code generation from plan'}), 500
 
 # Run server
 if __name__ == "__main__":

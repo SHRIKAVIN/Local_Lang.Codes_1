@@ -5,6 +5,7 @@ import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { Disclosure } from '@headlessui/react';
 import { ChevronUpIcon } from '@heroicons/react/20/solid';
+import { API_ENDPOINTS } from '../config';
 
 const AppPlanGenerator = () => {
   const [userInput, setUserInput] = useState('');
@@ -109,7 +110,7 @@ const AppPlanGenerator = () => {
     setResult({ translatedPrompt: '', appPlanOutput: '' });
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://local-lang-codes-1-4vgm.onrender.com/generate_app_plan', {
+      const response = await fetch(API_ENDPOINTS.GENERATE_APP_PLAN, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -162,7 +163,7 @@ const AppPlanGenerator = () => {
     setGeneratedCodeResult({ codeOutput: '', explanation: '' });
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://local-lang-codes-1-4vgm.onrender.com/generate_code_from_plan', {
+      const response = await fetch(API_ENDPOINTS.GENERATE_CODE_FROM_PLAN, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

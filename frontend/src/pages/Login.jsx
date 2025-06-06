@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Lock, Mail, AlertCircle } from 'lucide-react';
+import { API_ENDPOINTS } from '../config';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -15,7 +16,7 @@ const Login = () => {
     setError('');
 
     try {
-      const response = await fetch('https://local-lang-codes-1-4vgm.onrender.com/login', {
+      const response = await fetch(API_ENDPOINTS.LOGIN, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

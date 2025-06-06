@@ -11,8 +11,5 @@ export default defineConfig({
   },
   server: {
     port: 5173, // Frontend default port
-    proxy: {
-      '/process': 'http://localhost:5000', // Proxy API to Flask backend
-    },
   },
 })

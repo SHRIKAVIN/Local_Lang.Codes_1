@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Zap, Code, FileText, BookOpen, Loader2, ArrowRight, Clock, Globe, Copy, Check, RotateCw } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { darcula } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { API_ENDPOINTS } from '../config';
 
 const CodeGenerator = () => {
   const [userInput, setUserInput] = useState('');
@@ -46,7 +47,7 @@ const CodeGenerator = () => {
     setResult({ translatedPrompt: '', codeOutput: '', explanation: '' });
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://local-lang-codes-1-4vgm.onrender.com/process', {
+      const response = await fetch(API_ENDPOINTS.PROCESS, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

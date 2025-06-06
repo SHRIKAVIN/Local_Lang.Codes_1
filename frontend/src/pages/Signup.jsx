@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Lock, Mail, User, AlertCircle } from 'lucide-react';
+import { API_ENDPOINTS } from '../config';
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -33,7 +34,7 @@ const Signup = () => {
     }
 
     try {
-      const response = await fetch('https://local-lang-codes-1-4vgm.onrender.com/signup', {
+      const response = await fetch(API_ENDPOINTS.SIGNUP, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
