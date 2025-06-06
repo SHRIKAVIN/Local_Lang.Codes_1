@@ -56,23 +56,29 @@ const AppPlanGenerator = () => {
 
     const lines = markdown.split('\n');
     for (const line of lines) {
-      if (line.startsWith('# ')) {
+      // Check for both single (# ) and double (## ) hash headings
+      const headingMatch = line.match(/##?\s*(.+)/);
+
+      if (headingMatch) {
         if (currentSection) {
           sections.push(currentSection);
         }
-        currentSection = { title: line.substring(2).trim(), content: [] };
+        // Use the matched heading text as the title
+        currentSection = { title: headingMatch[1].trim(), content: [] };
       } else if (currentSection) {
+        // Add non-heading lines to the current section's content
         currentSection.content.push(line);
       }
     }
+    // Push the last section if it exists
     if (currentSection) {
       sections.push(currentSection);
     }
 
-    // Filter out empty lines and the introduction section if it's just the placeholder
+    // Filter out empty lines and potentially empty sections (optional, depending on desired output)
     return sections
       .map(section => ({...section, content: section.content.filter(line => line.trim() !== '').map(line => line.trim())}))
-      .filter(section => section.title !== 'Introduction' || section.content.length > 0);
+      .filter(section => section.title !== 'Introduction' || section.content.length > 0); // Keep non-empty Introduction or other sections
   };
 
   const handleGenerate = async () => {
@@ -99,6 +105,7 @@ const AppPlanGenerator = () => {
         setResult({ translatedPrompt: '', appPlanOutput: '' });
       } else if (data.appPlanOutput) {
         setResult({ translatedPrompt: data.translatedPrompt, appPlanOutput: data.appPlanOutput });
+        console.log('App Plan Output received:', data.appPlanOutput);
       } else {
         setError('Failed to generate app plan.');
       }
@@ -174,6 +181,7 @@ const AppPlanGenerator = () => {
   };
 
   const appPlanSections = parseBlueprint(result.appPlanOutput);
+  console.log('App Plan Sections:', appPlanSections);
 
   return (
     <div className="min-h-screen bg-gray-50">
