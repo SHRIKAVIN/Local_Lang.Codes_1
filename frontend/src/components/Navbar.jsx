@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Bell, User, LogOut, Settings, Menu, X, Code, Loader2 } from 'lucide-react';
+import { Bell, User, LogOut, Settings, Menu, X, Code, Loader2, Terminal } from 'lucide-react';
 import { API_ENDPOINTS } from '../config';
 
 const Navbar = () => {

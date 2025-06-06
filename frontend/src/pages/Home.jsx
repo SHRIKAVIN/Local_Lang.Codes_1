@@ -22,7 +22,6 @@ const Home = () => {
       description: "Generate code in multiple programming languages using natural language descriptions in your native language."
     },
     {
-      icon: <Globe className="w-6 h-6" />,
       icon: <Zap className="w-6 h-6" />,
       title: "App Blueprint Generation",
       description: "Generate structured blueprints and plans for your applications using natural language."
