@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Bell, User, LogOut, Settings, Menu, X, Code, Loader2, Terminal } from 'lucide-react';
+import { Bell, User, LogOut, Settings, Menu, X, Code, Loader2, Terminal, Zap, IndianRupee } from 'lucide-react';
 import { API_ENDPOINTS } from '../config';
 
 const Navbar = () => {
@@ -138,6 +138,8 @@ const Navbar = () => {
   const isCodeGeneratorPage = location.pathname === '/code';
   // Check if on App Plan Generator page
   const isAppPlanGeneratorPage = location.pathname === '/app-plan';
+   // Check if on Pricing page
+  const isPricingPage = location.pathname === '/pricing';
 
 
   return (
@@ -147,11 +149,13 @@ const Navbar = () => {
           <div className="flex">
             {/* Logo */}
             <div className="flex-shrink-0 flex items-center">
-              <Link to="/" className="text-xl font-bold text-gray-900">LocalLang.Codes</Link>
+              <Link to="/" className="text-xl font-bold text-blue-600 flex items-center">
+                 <Code className="mr-2" size={24} /> LocalLang.Codes
+              </Link>
             </div>
 
             {/* Desktop Navigation Links */}
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+            <div className="hidden sm:ml-6 sm:flex sm:space-x-4">
               <Link
                 to="/code"
                 className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
@@ -160,7 +164,7 @@ const Navbar = () => {
                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                 }`}
               >
-                 <Code className="mr-2" size={20} />Code Generator
+                 <Zap className="mr-2" size={20} />Code Generator
               </Link>
               <Link
                 to="/app-plan"
@@ -169,8 +173,18 @@ const Navbar = () => {
                      ? 'border-blue-500 text-gray-900'
                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                  }`}
-              >
+               >
                 <Terminal className="mr-2" size={20} />App Plan Generator
+              </Link>
+              <Link
+                to="/pricing"
+                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                   isPricingPage
+                     ? 'border-blue-500 text-gray-900'
+                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                 }`}
+              >
+                 <IndianRupee className="mr-2" size={20} />Pricing
               </Link>
                {/* Add other desktop links here if needed */}
             </div>
@@ -195,7 +209,7 @@ const Navbar = () => {
               </div>
             ) : (
               <div className="hidden sm:ml-6 sm:flex sm:items-center relative">
-                {/* Notifications Icon */}
+                
                  <div className="relative" ref={notificationsRef}>
                    <button
                      type="button"
@@ -267,7 +281,7 @@ const Navbar = () => {
                          to="/settings"
                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                          role="menuitem"
-                         onClick={() => setShowProfileMenu(false)}
+                         onClick={() => setShowMobileMenu(false)}
                        >
                          <Settings className="mr-2 inline-block" size={16} /> Settings
                        </Link>
@@ -318,7 +332,7 @@ const Navbar = () => {
                }`}
               onClick={() => setShowMobileMenu(false)}
             >
-               <Code className="mr-2 inline-block" size={20} /> Code Generator
+               <Zap className="mr-2 inline-block" size={20} /> Code Generator
             </Link>
             <Link
               to="/app-plan"
@@ -330,6 +344,17 @@ const Navbar = () => {
               onClick={() => setShowMobileMenu(false)}
             >
                <Terminal className="mr-2 inline-block" size={20} /> App Plan Generator
+            </Link>
+            <Link
+              to="/pricing"
+              className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
+                 isPricingPage
+                   ? 'border-blue-500 bg-blue-50 text-blue-700'
+                   : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800'
+               }`}
+              onClick={() => setShowMobileMenu(false)}
+            >
+               <IndianRupee className="mr-2 inline-block" size={20} /> Pricing
             </Link>
             {/* Add other mobile links here if needed */}
           </div>
@@ -354,7 +379,7 @@ const Navbar = () => {
                     <Bell className="h-6 w-6" aria-hidden="true" />
                   </button>
                </div>
-               {/* Mobile Notifications Dropdown (simple) */}
+               
                 {showNotifications && notifications.length > 0 && (
                      <div className="mt-2 space-y-1 px-2">
                         {notifications.map((notification, index) => (
@@ -369,6 +394,7 @@ const Navbar = () => {
                  <Link
                    to="/profile"
                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-900 hover:bg-gray-100"
+                   role="menuitem"
                    onClick={() => setShowMobileMenu(false)}
                  >
                    Your Profile
@@ -376,6 +402,7 @@ const Navbar = () => {
                   <Link
                     to="/settings"
                     className="block px-3 py-2 rounded-md text-base font-medium text-gray-900 hover:bg-gray-100"
+                    role="menuitem"
                     onClick={() => setShowMobileMenu(false)}
                   >
                     Settings

@@ -382,6 +382,33 @@ def generate_code_from_plan_text(app_plan_text):
         logger.error(f"Code generation from plan error: {str(e)}", exc_info=True)
         return f"Error: {str(e)}", None
 
+# Function: Translate from English using Sarvam
+def translate_from_english(text, target_language_code):
+    logger.info(f"Translating text from English to {target_language_code}")
+    url = "https://api.sarvam.ai/translate"
+    headers = {
+        "api-subscription-key": SARVAM_API_KEY,
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "input": text,
+        "source_language_code": "en-IN", # Assuming English source
+        "target_language_code": target_language_code
+    }
+    try:
+        response = requests.post(url, headers=headers, json=payload)
+        response_json = response.json()
+        logger.info(f"Sarvam API Translate from English Response: {response_json}")
+
+        if response.status_code == 200 and 'translated_text' in response_json:
+            return response_json['translated_text']
+        else:
+            logger.error(f"Translation from English failed: {response_json}")
+            return "Translation Failed!"
+    except Exception as e:
+        logger.error(f"Translation from English error: {str(e)}")
+        return "Translation Failed!"
+
 # Main API Route
 @app.route('/process', methods=['POST'])
 # @token_required  # Temporarily removed for debugging
@@ -390,6 +417,8 @@ def process():  # Removed current_user argument
         data = request.json
         # Note: @token_required is temporarily removed for debugging. User info is not available.
         user_email = 'Unauthorized User' # Indicate request is unauthenticated
+        # Use current_user email if available, otherwise use a placeholder
+        # user_email = current_user.get('email', 'Unauthorized User') # Uncomment when @token_required is back
         logger.info(f"Incoming Request Data for user {user_email}: {data}")
 
         user_input = data.get('user_input')
@@ -402,12 +431,13 @@ def process():  # Removed current_user argument
 
         logger.info(f"Processing request for user {user_email}: Input='{user_input}', Lang='{user_language_code}', Choice='{choice}'")
 
+        # Translate user input to English for Groq (assuming Groq works best with English prompts)
         translated_prompt = translate_to_english(user_input, user_language_code)
-        
+
         if translated_prompt == "Translation Failed!":
-            logger.error(f"Translation failed for user {user_email}")
+            logger.error(f"Translation of input failed for user {user_email}")
             return jsonify({
-                'error': 'Translation failed. Please try again.',
+                'error': 'Input translation failed. Please try again.',
                 'translatedPrompt': "Translation Failed!", # Use camelCase
                 'codeOutput': None,
                 'explanation': None
@@ -417,7 +447,7 @@ def process():  # Removed current_user argument
 
         if choice == 'code':
             code_output = generate_code(translated_prompt)
-            
+
             if code_output.startswith("Error:"):
                 logger.error(f"Code generation failed for user {user_email}: {code_output}")
                 return jsonify({
@@ -429,29 +459,27 @@ def process():  # Removed current_user argument
 
             logger.info(f"Code Output for user {user_email}: {code_output[:100]}...") # Log first 100 chars
 
-            # Language Map
-            language_map = {
-                "ta-IN": "Tamil",
-                "hi-IN": "Hindi",
-                "te-IN": "Telugu",
-                "ml-IN": "Malayalam",
-                "bn-IN": "Bengali",
-                "gu-IN": "Gujarati",
-                "kn-IN": "Kannada",
-                "mr-IN": "Marathi",
-                "od-IN": "Odia",
-                "pa-IN": "Punjabi",
-            }
-            selected_language = language_map.get(user_language_code, "English") # Default to English if language not mapped
-            logger.info(f"Attempting to generate explanation for user {user_email} in: {selected_language}")
+            # Generate explanation (likely in English from Groq)
+            explanation_english = explain_code(code_output, "English") # Request explanation in English
 
-            explanation = explain_code(code_output, selected_language)
-            
-            if explanation and explanation.startswith("Error:"):
-                 logger.warning(f"Explanation generation failed for user {user_email}: {explanation}. Proceeding without explanation.")
-                 explanation = None # Send None explanation if it failed
-            
-            logger.info(f"Explanation for user {user_email}: {explanation[:100]}...") if explanation else logger.info(f"No explanation generated for user {user_email}.")
+            explanation = None # Initialize explanation in target language
+
+            if explanation_english and not explanation_english.startswith("Error:"):
+                 # Translate the English explanation to the user's selected language
+                 # Only translate if the user's language is not English
+                 if user_language_code != 'en-US': # Assuming 'en-US' is English code
+                     explanation = translate_from_english(explanation_english, user_language_code)
+                     if explanation == "Translation Failed!":
+                          logger.warning(f"Explanation translation failed for user {user_email}. Providing English explanation.")
+                          explanation = explanation_english # Fallback to English explanation if translation fails
+                 else:
+                     explanation = explanation_english # Use English explanation if user selected English
+            else:
+                 logger.warning(f"English Explanation generation failed for user {user_email}. No explanation available.")
+                 explanation = None # No explanation if English generation failed
+
+
+            logger.info(f"Final Explanation for user {user_email}: {explanation[:100]}...") if explanation else logger.info(f"No explanation generated for user {user_email}.")
 
             return jsonify({
                 'translatedPrompt': translated_prompt, # Use camelCase for consistency with frontend

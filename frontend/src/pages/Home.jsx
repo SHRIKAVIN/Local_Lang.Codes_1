@@ -165,6 +165,74 @@ const Home = () => {
           ))}
         </div>
 
+        {/* How It Works Section */}
+        <div className="mb-12 md:mb-16">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">How It Works</h2>
+            <p className="text-base md:text-lg text-gray-600">Three simple steps to transform your ideas into code</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-white rounded-xl shadow-md p-6 text-center relative">
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">1</div>
+              <div className="mt-4">
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">Describe Your Idea</h3>
+                <p className="text-gray-600">Write your requirements in your native language. Be as detailed as you want - our AI understands natural language perfectly.</p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-md p-6 text-center relative">
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">2</div>
+              <div className="mt-4">
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">AI Processing</h3>
+                <p className="text-gray-600">Our advanced AI analyzes your requirements and generates the appropriate code or application blueprint.</p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-md p-6 text-center relative">
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">3</div>
+              <div className="mt-4">
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">Get Your Code</h3>
+                <p className="text-gray-600">Receive your generated code with detailed explanations in your preferred language. Ready to use and customize.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Testimonials Section */}
+        <div className="mb-12 md:mb-16">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">What Our Users Say</h2>
+            <p className="text-base md:text-lg text-gray-600">Join thousands of satisfied developers using LocalLang.Codes</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            {testimonials.map((testimonial, index) => (
+              <div
+                key={index}
+                className="bg-white rounded-xl shadow-md p-6 flex flex-col"
+              >
+                <div className="flex items-center mb-4">
+                  <img
+                    src={testimonial.avatar}
+                    alt={testimonial.name}
+                    className="w-12 h-12 rounded-full mr-4"
+                  />
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">{testimonial.name}</h3>
+                    <p className="text-sm text-gray-600">{testimonial.role}</p>
+                  </div>
+                </div>
+                <div className="flex mb-4">
+                  {renderStars(testimonial.rating)}
+                </div>
+                <p className="text-gray-600 mb-4 flex-grow">{testimonial.content}</p>
+                <p className="text-sm text-gray-500">{testimonial.date}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Call to Action Section */}
         <div className="bg-blue-600 text-white rounded-xl">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
