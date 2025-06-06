@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Zap, Code, BookOpen, Loader2, ArrowRight, Clock, Globe, Terminal } from 'lucide-react';
+import { Zap, Code, BookOpen, Loader2, ArrowRight, Clock, Globe, Terminal, AlertCircle, Copy } from 'lucide-react';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { Disclosure } from '@headlessui/react';
@@ -49,55 +49,27 @@ const AppPlanGenerator = () => {
   }, [navigate]);
 
   // Function to parse the markdown blueprint into sections
-  const parseAppBlueprint = (markdown) => {
+  const parseBlueprint = (markdown) => {
+    if (!markdown) return [];
     const sections = [];
-    const lines = markdown.split('\n');
     let currentSection = null;
 
+    const lines = markdown.split('\n');
     for (const line of lines) {
-      const headingMatch = line.match(/##?\s*(.+)/); // Match ## or # headings
-      const boldTitleMatch = line.match(/\*\*(.+):\*\*/); // Match bold titles like **Title:**
-
-      if (headingMatch) {
+      if (line.startsWith('# ')) {
         if (currentSection) {
           sections.push(currentSection);
         }
-        currentSection = { title: headingMatch[1].trim(), content: [] };
-      } else if (boldTitleMatch) {
-        if (currentSection) {
-           // If there's an existing section, push it first if it has content
-           if (currentSection.content.length > 0) {
-               sections.push(currentSection);
-           }
-           // Start a new section with the bold title
-           currentSection = { title: boldTitleMatch[1].trim() + ':', content: [] };
-        } else {
-          // If no current section, start one with the bold title
-          currentSection = { title: boldTitleMatch[1].trim() + ':', content: [] };
-        }
-        // Add the rest of the line after the bold title to content
-        const remainingContent = line.substring(boldTitleMatch[0].length).trim();
-        if (remainingContent) {
-            currentSection.content.push(remainingContent);
-        }
+        currentSection = { title: line.substring(2).trim(), content: [] };
       } else if (currentSection) {
         currentSection.content.push(line);
-      } else {
-        // If there's no current section and it's not a heading, treat as introductory content
-        if (sections.length === 0) {
-             sections.push({ title: 'Introduction', content: [line] });
-        } else {
-             // Add to the content of the last section if it exists
-             sections[sections.length - 1].content.push(line);
-        }
       }
     }
-
     if (currentSection) {
       sections.push(currentSection);
     }
 
-    // Clean up empty content arrays and trim content lines
+    // Filter out empty lines and the introduction section if it's just the placeholder
     return sections
       .map(section => ({...section, content: section.content.filter(line => line.trim() !== '').map(line => line.trim())}))
       .filter(section => section.title !== 'Introduction' || section.content.length > 0);
@@ -201,15 +173,19 @@ const AppPlanGenerator = () => {
     }
   };
 
+  const appPlanSections = parseBlueprint(result.appPlanOutput);
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Page Heading */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <h1 className="text-2xl font-bold text-gray-900">App Plan Generator</h1>
-      </div>
-
+      {/* Header */}
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <h1 className="text-2xl font-bold text-gray-900">App Plan Generator</h1>
+        </div>
+      </header>
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Input and Output Sections */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Left Side - Input */}
           <div className="bg-white rounded-xl shadow-md p-6">
             <h2 className="text-xl font-semibold mb-4 text-gray-900">Input</h2>
@@ -229,131 +205,133 @@ const AppPlanGenerator = () => {
               <div className="mb-6">
                 <label className="block text-gray-700 font-medium mb-2">Describe what app you want to build</label>
                 <textarea
+                  rows="6"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="e.g., A mobile app to track personal expenses"
                   value={userInput}
                   onChange={e => setUserInput(e.target.value)}
-                  rows={8}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter your app idea in your native language..."
-                />
+                ></textarea>
               </div>
-              {error && <div className="mb-4 text-red-600 text-sm">{error}</div>}
               <button
                 type="submit"
-                disabled={isLoading || !userInput.trim()} // Use isLoading for consistency
-                className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center blue-button"
+                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 flex items-center justify-center"
+                disabled={isLoading}
               >
-                {isLoading ? (
+                 {isLoading ? (
                   <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    <Loader2 className="animate-spin mr-2" size={20} />
                     Building Plan...
                   </>
                 ) : (
                   <>
-                    <Terminal className="w-5 h-5 mr-2" /> Build App Plan
+                    <Zap className="mr-2" size={20} />
+                    Build App Plan
                   </>
                 )}
               </button>
             </form>
+            {error && (
+              <p className="mt-4 text-sm text-red-600 flex items-center"><AlertCircle className="mr-2" size={16} />{error}</p>
+            )}
           </div>
 
-          {/* Right Side - Translation and Output */}
+          {/* Right Side - Output */}
           <div className="bg-white rounded-xl shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900 flex items-center">
-              <ArrowRight className="w-5 h-5 text-blue-600 mr-2" /> Translation & Blueprint
-            </h2>
-            <div className="bg-gray-50 rounded-lg p-4 min-h-[200px] border border-gray-200 mb-4">
-              <h3 className="font-semibold mb-2 text-gray-900">Translated Prompt</h3>
-              {result.translatedPrompt ? (
-                <p className="text-gray-700 whitespace-pre-line">{result.translatedPrompt}</p>
-              ) : (
-                <p className="text-gray-400 italic">Translation will appear here...</p>
-              )}
+            <h2 className="text-xl font-semibold mb-4 text-gray-900">Translation & Blueprint</h2>
+
+            {/* Translated Prompt */}
+            <div className="mb-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-2 flex items-center"><ArrowRight className="mr-2" size={20} />Translated Prompt</h3>
+              <div className="bg-gray-100 p-4 rounded-lg text-gray-700 whitespace-pre-wrap break-words text-sm">
+                {result.translatedPrompt || 'Your translated prompt will appear here...'}
+              </div>
             </div>
 
-            {result.appPlanOutput && (
-              <div className="mt-8 p-6 bg-gray-100 rounded-lg border border-gray-300">
-                <h3 className="text-xl font-semibold mb-4 text-gray-900 flex items-center">
-                  <BookOpen className="w-4 h-4 mr-2 text-blue-600" /> App Blueprint
-                </h3>
-                <div className="space-y-2">
-                  {parseAppBlueprint(result.appPlanOutput).map((section, index) => (
-                    <Disclosure key={index}>
+            {/* App Blueprint */}
+            <div className="mb-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-2 flex items-center"><BookOpen className="mr-2" size={20} />App Blueprint</h3>
+              {result.appPlanOutput ? (
+                <div className="space-y-4">
+                  {appPlanSections.map((section, index) => (
+                    <Disclosure as="div" key={index} className="mt-2">
                       {({ open }) => (
                         <>
-                          <Disclosure.Button className="flex justify-between w-full px-4 py-2 text-sm font-medium text-left text-blue-900 bg-blue-100 rounded-lg hover:bg-blue-200 focus:outline-none focus-visible:ring focus-visible:ring-blue-500 focus-visible:ring-opacity-75">
+                          <Disclosure.Button className="flex w-full justify-between rounded-lg bg-blue-100 px-4 py-2 text-left text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring focus-visible:ring-blue-500 focus-visible:ring-opacity-75">
                             <span>{section.title}</span>
                             <ChevronUpIcon
                               className={`${
-                                open ? 'transform rotate-180' : ''
-                              } w-5 h-5 text-blue-500`}
+                                open ? 'rotate-180 transform' : ''
+                              } h-5 w-5 text-blue-500`}
                             />
                           </Disclosure.Button>
-                          <Disclosure.Panel className="px-4 pt-4 pb-2 text-sm text-gray-500 bg-white rounded-b-lg border border-t-0 border-gray-200">
+                          <Disclosure.Panel className="px-4 pt-4 pb-2 text-sm text-gray-500">
                             {section.content.map((line, lineIndex) => (
-                              <p key={lineIndex} className="mb-1 last:mb-0">{line}</p>
+                              <p key={lineIndex}>{line}</p>
                             ))}
                           </Disclosure.Panel>
                         </>
                       )}
                     </Disclosure>
                   ))}
+                  <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 mt-4">
+                    <button
+                      onClick={handleGenerateCodeForPlan}
+                      className="w-full sm:w-auto flex-1 bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 flex items-center justify-center"
+                      disabled={isGeneratingCode}
+                    >
+                       {isGeneratingCode ? (
+                        <>
+                          <Loader2 className="animate-spin mr-2" size={20} />
+                          Generating Code...
+                        </>
+                      ) : (
+                        <>
+                          <Code className="mr-2" size={20} />
+                          Generate Code for Plan
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={handleCopyBlueprint}
+                      className="w-full sm:w-auto flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg font-medium hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 flex items-center justify-center"
+                    >
+                      <Copy className="mr-2" size={20} />
+                      Copy Blueprint
+                    </button>
+                    <button
+                      onClick={handleExportPlan}
+                      className="w-full sm:w-auto flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg font-medium hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 flex items-center justify-center"
+                    >
+                      <Terminal className="mr-2" size={20} />
+                      Export to ZIP
+                    </button>
+                  </div>
+                  {codeGenerationError && (
+                     <p className="mt-4 text-sm text-red-600 flex items-center"><AlertCircle className="mr-2" size={16} />{codeGenerationError}</p>
+                   )}
+                     {generatedCodeResult.codeOutput && (
+                         <div className="mt-6">
+                             <h3 className="text-lg font-medium text-gray-900 mb-2 flex items-center"><Code className="mr-2" size={20} />Generated Code</h3>
+                             <div className="bg-gray-100 p-4 rounded-lg text-gray-700 whitespace-pre-wrap break-words text-sm">
+                                 {generatedCodeResult.codeOutput}
+                             </div>
+                             {generatedCodeResult.explanation && (
+                                 <div className="mt-4">
+                                      <h4 className="text-md font-medium text-gray-800 mb-2 flex items-center"><BookOpen className="mr-2" size={18} />Explanation</h4>
+                                     <div className="bg-gray-100 p-4 rounded-lg text-gray-700 whitespace-pre-wrap break-words text-sm">
+                                         {generatedCodeResult.explanation}
+                                     </div>
+                                 </div>
+                             )}
+                         </div>
+                     )}
+
                 </div>
-                <div className="flex space-x-4 mt-6 justify-end">
-                  <button
-                    onClick={handleGenerateCodeForPlan}
-                    disabled={isGeneratingCode}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isGeneratingCode ? (
-                      <>
-                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                        Generating Code...
-                      </>
-                    ) : (
-                      'Generate Code for Plan'
-                    )}
-                  </button>
-                  <button
-                    onClick={handleCopyBlueprint}
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Copy Blueprint
-                  </button>
-                  <button
-                    onClick={handleExportPlan}
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    📦 Export to ZIP
-                  </button>
-                </div>
-              </div>
-            )}
+              ) : ( <div className="bg-gray-100 p-4 rounded-lg text-gray-700 text-sm">Your app blueprint will appear here...</div> )}
+            </div>
           </div>
         </div>
       </main>
-
-      {/* Generated Code from Plan Section */}
-      {generatedCodeResult.codeOutput && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900 flex items-center">
-              <Code className="w-5 h-5 text-blue-600 mr-2" /> Generated Code for Plan
-            </h2>
-            {codeGenerationError && <div className="mb-4 text-red-600 text-sm">{codeGenerationError}</div>}
-            <pre className="bg-gray-100 rounded-lg p-4 overflow-x-auto text-sm text-gray-800 mb-4 border border-gray-300">
-              {generatedCodeResult.codeOutput}
-            </pre>
-            {generatedCodeResult.explanation && (
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-300">
-                <h3 className="font-semibold mb-2 text-gray-900 flex items-center">
-                  <BookOpen className="w-4 h-4 mr-2 text-blue-600" />Explanation
-                </h3>
-                <p className="text-gray-700 whitespace-pre-line">{generatedCodeResult.explanation}</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

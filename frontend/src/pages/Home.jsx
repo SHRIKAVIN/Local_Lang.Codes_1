@@ -102,16 +102,16 @@ const Home = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 md:mb-6">
               LocalLang.Codes
             </h1>
-            <p className="text-xl md:text-2xl mb-8 text-blue-100">
+            <p className="text-lg md:text-xl lg:text-2xl mb-6 md:mb-8 text-blue-100">
               Transform your ideas into code using natural language in your native tongue
             </p>
             {!isLoggedIn ? (
-              <div className="space-x-4">
+              <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
                 <Link
                   to="/signup"
                   className="inline-block bg-white text-blue-600 px-8 py-3 rounded-lg font-medium hover:bg-blue-50 transition-colors"
@@ -126,7 +126,7 @@ const Home = () => {
                 </Link>
               </div>
             ) : (
-              <div className="space-x-4">
+              <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
                 <Link
                   to="/code"
                   className="inline-block bg-white text-blue-600 px-8 py-3 rounded-lg font-medium hover:bg-blue-50 transition-colors"
@@ -146,96 +146,32 @@ const Home = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
         {/* Features Section */}
-        <div className="mb-16">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Powerful Features</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => (
-              <div
-                key={index}
-                className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow"
-              >
-                <div className="text-blue-600 mb-4">{feature.icon}</div>
-                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                <p className="text-gray-600">{feature.description}</p>
-              </div>
-            ))}
-          </div>
+        <div className="text-center mb-12 md:mb-16">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">Features</h2>
+          <p className="text-base md:text-lg text-gray-600">Unlock the power of AI-assisted coding in your native language.</p>
         </div>
 
-        {/* How It Works Section */}
-        <div className="bg-gray-100 py-16 mb-16 rounded-xl">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="text-center">
-                <div className="bg-blue-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-white text-xl font-bold">1</span>
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Describe Your Idea</h3>
-                <p className="text-gray-600">
-                  Write what you want to build in your native language
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="bg-blue-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-white text-xl font-bold">2</span>
-                </div>
-                <h3 className="text-xl font-semibold mb-2">AI Processing</h3>
-                <p className="text-gray-600">
-                  Our AI translates and generates the code
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="bg-blue-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-white text-xl font-bold">3</span>
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Get Results</h3>
-                <p className="text-gray-600">
-                  Receive code and explanation in your language
-                </p>
-              </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 mb-12 md:mb-16">
+          {features.map((feature, index) => (
+            <div
+              key={index}
+              className="bg-white rounded-xl shadow-md p-6 flex flex-col items-center text-center"
+            >
+              <div className="text-blue-600 mb-4">{feature.icon}</div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
+              <p className="text-sm text-gray-600">{feature.description}</p>
             </div>
-          </div>
+          ))}
         </div>
 
-        {/* Testimonials Section */}
-        <div className="mb-16">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">What Users Say</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <div
-                key={index}
-                className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-center mb-4">
-                  <img
-                    src={testimonial.avatar}
-                    alt={testimonial.name}
-                    className="w-12 h-12 rounded-full mr-4"
-                  />
-                  <div>
-                    <h3 className="font-semibold">{testimonial.name}</h3>
-                    <p className="text-sm text-gray-500">{testimonial.role}</p>
-                  </div>
-                </div>
-                <div className="flex items-center mb-4">
-                  {renderStars(testimonial.rating)}
-                  <span className="ml-2 text-sm text-gray-500">{testimonial.date}</span>
-                </div>
-                <p className="text-gray-600">{testimonial.content}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* CTA Section */}
+        {/* Call to Action Section */}
         <div className="bg-blue-600 text-white rounded-xl">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
             <div className="text-center">
-              <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
-              <p className="text-xl mb-8 text-blue-100">
+              <h2 className="text-2xl md:text-3xl font-bold mb-4">Ready to Get Started?</h2>
+              <p className="text-base md:text-xl mb-6 md:mb-8 text-blue-100">
                 Join thousands of developers creating amazing things
               </p>
               {!isLoggedIn ? (
