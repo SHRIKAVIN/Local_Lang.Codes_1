@@ -6,6 +6,7 @@ import { saveAs } from 'file-saver';
 import { Disclosure } from '@headlessui/react';
 import { ChevronUpIcon } from '@heroicons/react/20/solid';
 import { API_ENDPOINTS } from '../config';
+import { authenticatedFetch } from '../utils/api';
 
 const AppPlanGenerator = () => {
   const [userInput, setUserInput] = useState('');
@@ -87,31 +88,28 @@ const AppPlanGenerator = () => {
     setError('');
     setResult({ translatedPrompt: '', appPlanOutput: '' });
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(API_ENDPOINTS.GENERATE_APP_PLAN, {
+      const data = await authenticatedFetch(API_ENDPOINTS.GENERATE_APP_PLAN, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           user_input: userInput,
-          user_language_code: languageCode,
+          user_language_code: languageCode
         }),
       });
-      const data = await response.json();
-      if (data.error) {
-        setError(data.error);
+
+      if (!data.appPlanOutput && !data.app_plan_output) {
+        setError('No app plan was generated. Please check your backend or try again.');
         setResult({ translatedPrompt: '', appPlanOutput: '' });
-      } else if (data.appPlanOutput) {
-        setResult({ translatedPrompt: data.translatedPrompt, appPlanOutput: data.appPlanOutput });
-        console.log('App Plan Output received:', data.appPlanOutput);
       } else {
-        setError('Failed to generate app plan.');
+        setResult({
+          translatedPrompt: data.translatedPrompt || data.translated_prompt || '',
+          appPlanOutput: data.appPlanOutput || data.app_plan_output || ''
+        });
       }
     } catch (err) {
-      console.error('App plan generation error:', err);
-      setError('Failed to connect to backend or an unexpected error occurred.');
+      setError('Failed to generate app plan. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -135,35 +133,33 @@ const AppPlanGenerator = () => {
     }
   };
 
-  const handleGenerateCodeForPlan = async () => {
+  const handleGenerateCode = async () => {
     if (!result.appPlanOutput) return;
     setIsGeneratingCode(true);
     setCodeGenerationError('');
     setGeneratedCodeResult({ codeOutput: '', explanation: '' });
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(API_ENDPOINTS.GENERATE_CODE_FROM_PLAN, {
+      const data = await authenticatedFetch(API_ENDPOINTS.GENERATE_CODE_FROM_PLAN, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          app_plan_text: result.appPlanOutput,
+          app_plan_text: result.appPlanOutput
         }),
       });
-      const data = await response.json();
-      if (data.error) {
-        setCodeGenerationError(data.error);
+
+      if (!data.codeOutput && !data.code_output) {
+        setCodeGenerationError('No code was generated. Please check your backend or try again.');
         setGeneratedCodeResult({ codeOutput: '', explanation: '' });
-      } else if (data.codeOutput) {
-        setGeneratedCodeResult({ codeOutput: data.codeOutput, explanation: data.explanation || '' });
       } else {
-        setCodeGenerationError('Failed to generate code from plan.');
+        setGeneratedCodeResult({
+          codeOutput: data.codeOutput || data.code_output || '',
+          explanation: data.explanation || ''
+        });
       }
     } catch (err) {
-      console.error('Code generation from plan error:', err);
-      setCodeGenerationError('Failed to connect to backend or an unexpected error occurred during code generation.');
+      setCodeGenerationError('Failed to generate code. Please try again.');
     } finally {
       setIsGeneratingCode(false);
     }
@@ -283,7 +279,7 @@ const AppPlanGenerator = () => {
                   ))}
                   <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 mt-4">
                     <button
-                      onClick={handleGenerateCodeForPlan}
+                      onClick={handleGenerateCode}
                       className="w-full sm:w-auto flex-1 bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 flex items-center justify-center"
                       disabled={isGeneratingCode}
                     >

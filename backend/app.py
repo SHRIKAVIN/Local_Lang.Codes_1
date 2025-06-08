@@ -21,6 +21,8 @@ CORS(app, origins=['https://local-lang-codes-1.vercel.app', 'http://localhost:51
 
 # Secret key for JWT
 app.config['SECRET_KEY'] = 'your-very-secret-key'  # Use a fixed secret key for consistent JWT
+TOKEN_EXPIRY = datetime.timedelta(hours=1)  # Token expires in 1 hour
+REFRESH_TOKEN_EXPIRY = datetime.timedelta(days=7)  # Refresh token expires in 7 days
 
 # User database file
 USERS_DB_FILE = Path('users.json')
@@ -90,10 +92,56 @@ def token_required(f):
             # Add email to the current_user object before passing it
             current_user['email'] = data['email']
 
+        except jwt.ExpiredSignatureError:
+            return jsonify({'error': 'Token has expired', 'code': 'TOKEN_EXPIRED'}), 401
         except:
             return jsonify({'error': 'Invalid token'}), 401
         return f(current_user, *args, **kwargs)
     return decorated
+
+# Token refresh route
+@app.route('/refresh-token', methods=['POST'])
+def refresh_token():
+    try:
+        refresh_token = request.json.get('refresh_token')
+        if not refresh_token:
+            return jsonify({'error': 'Refresh token is missing'}), 400
+
+        try:
+            # Verify the refresh token
+            data = jwt.decode(refresh_token, app.config['SECRET_KEY'], algorithms=["HS256"])
+            email = data['email']
+            
+            # Check if user exists
+            users = load_users()
+            if email not in users:
+                return jsonify({'error': 'Invalid refresh token'}), 401
+
+            # Generate new access token
+            new_token = jwt.encode({
+                'email': email,
+                'exp': datetime.datetime.utcnow() + TOKEN_EXPIRY
+            }, app.config['SECRET_KEY'])
+
+            # Generate new refresh token
+            new_refresh_token = jwt.encode({
+                'email': email,
+                'exp': datetime.datetime.utcnow() + REFRESH_TOKEN_EXPIRY
+            }, app.config['SECRET_KEY'])
+
+            return jsonify({
+                'token': new_token,
+                'refresh_token': new_refresh_token
+            })
+
+        except jwt.ExpiredSignatureError:
+            return jsonify({'error': 'Refresh token has expired', 'code': 'REFRESH_TOKEN_EXPIRED'}), 401
+        except:
+            return jsonify({'error': 'Invalid refresh token'}), 401
+
+    except Exception as e:
+        logger.error(f"Token refresh error: {str(e)}")
+        return jsonify({'error': 'An error occurred during token refresh'}), 500
 
 # Get generation history route
 @app.route('/history', methods=['GET'])
@@ -135,11 +183,18 @@ def signup():
         # Generate JWT token
         token = jwt.encode({
             'email': email,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+            'exp': datetime.datetime.utcnow() + TOKEN_EXPIRY
+        }, app.config['SECRET_KEY'])
+
+        # Generate refresh token
+        refresh_token = jwt.encode({
+            'email': email,
+            'exp': datetime.datetime.utcnow() + REFRESH_TOKEN_EXPIRY
         }, app.config['SECRET_KEY'])
 
         return jsonify({
             'token': token,
+            'refresh_token': refresh_token,
             'user': {
                 'email': email,
                 'name': name
@@ -169,11 +224,18 @@ def login():
         # Generate JWT token
         token = jwt.encode({
             'email': email,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+            'exp': datetime.datetime.utcnow() + TOKEN_EXPIRY
+        }, app.config['SECRET_KEY'])
+
+        # Generate refresh token
+        refresh_token = jwt.encode({
+            'email': email,
+            'exp': datetime.datetime.utcnow() + REFRESH_TOKEN_EXPIRY
         }, app.config['SECRET_KEY'])
 
         return jsonify({
             'token': token,
+            'refresh_token': refresh_token,
             'user': {
                 'email': email,
                 'name': user['name']

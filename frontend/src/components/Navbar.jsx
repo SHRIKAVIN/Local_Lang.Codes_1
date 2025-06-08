@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Bell, User, LogOut, Settings, Menu, X, Code, Loader2, Terminal, Zap, IndianRupee } from 'lucide-react';
 import { API_ENDPOINTS } from '../config';
+import { authenticatedFetch } from '../utils/api';
 
 const Navbar = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -20,16 +21,12 @@ const Navbar = () => {
 
   const fetchUserData = async (token) => {
     try {
-      const response = await fetch(API_ENDPOINTS.USER, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
+      const data = await authenticatedFetch(API_ENDPOINTS.USER);
       if (data.error) {
         console.error('Error fetching user data:', data.error);
         // If token is invalid, clear storage and redirect to login
         localStorage.removeItem('token');
+        localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');
         setIsLoggedIn(false);
         setUser(null);
@@ -42,6 +39,7 @@ const Navbar = () => {
       console.error('Error fetching user data:', err);
       // If there's an error, clear storage and redirect to login
       localStorage.removeItem('token');
+      localStorage.removeItem('refresh_token');
       localStorage.removeItem('user');
       setIsLoggedIn(false);
       setUser(null);
@@ -128,6 +126,7 @@ const Navbar = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
     setIsLoggedIn(false);
     setUser(null);

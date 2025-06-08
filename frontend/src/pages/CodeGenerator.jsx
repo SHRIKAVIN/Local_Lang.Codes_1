@@ -4,6 +4,7 @@ import { Zap, Code, FileText, BookOpen, Loader2, ArrowRight, Clock, Globe, Copy,
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { darcula } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { API_ENDPOINTS } from '../config';
+import { authenticatedFetch } from '../utils/api';
 
 const CodeGenerator = () => {
   const [userInput, setUserInput] = useState('');
@@ -46,12 +47,10 @@ const CodeGenerator = () => {
     setError('');
     setResult({ translatedPrompt: '', codeOutput: '', explanation: '' });
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(API_ENDPOINTS.PROCESS, {
+      const data = await authenticatedFetch(API_ENDPOINTS.PROCESS, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           user_input: userInput,
@@ -59,7 +58,7 @@ const CodeGenerator = () => {
           choice: 'code'
         }),
       });
-      const data = await response.json();
+
       if (!data.codeOutput && !data.code_output) {
         setError('No code was generated. Please check your backend or try again.');
         setResult({ translatedPrompt: '', codeOutput: '', explanation: '' });

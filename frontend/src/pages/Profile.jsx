@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, Clock, Loader2, AlertCircle } from 'lucide-react';
 import { API_ENDPOINTS } from '../config';
+import { authenticatedFetch } from '../utils/api';
 
 const Profile = () => {
   const [user, setUser] = useState(null);
@@ -22,12 +23,7 @@ const Profile = () => {
     // Fetch User Data
     const fetchUserData = async () => {
       try {
-        const response = await fetch(API_ENDPOINTS.USER, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-        const data = await response.json();
+        const data = await authenticatedFetch(API_ENDPOINTS.USER);
         if (data.error) {
           setUserError(data.error);
         } else if (data.user) {
@@ -43,12 +39,7 @@ const Profile = () => {
     // Fetch Generation History
     const fetchHistory = async () => {
       try {
-        const response = await fetch(API_ENDPOINTS.HISTORY, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-        const data = await response.json();
+        const data = await authenticatedFetch(API_ENDPOINTS.HISTORY);
         if (data.error) {
           setHistoryError(data.error);
         } else if (data.history) {

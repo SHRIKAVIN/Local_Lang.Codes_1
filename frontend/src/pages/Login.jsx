@@ -40,6 +40,7 @@ const Login = () => {
       // Store the token in localStorage
       console.log('Storing token and user in localStorage...');
       localStorage.setItem('token', data.token);
+      localStorage.setItem('refresh_token', data.refresh_token);
       localStorage.setItem('user', JSON.stringify(data.user));
       console.log('localStorage after setting:', localStorage.getItem('token'), localStorage.getItem('user'));
 
