@@ -271,7 +271,7 @@ def get_user(current_user):
         return jsonify({'error': 'Failed to fetch user data'}), 500
 
 # API Keys (should be stored in environment variables)
-SARVAM_API_KEY = os.environ.get('SARVAM_API_KEY', 'sk_vyr4ze68_kzjm76DIOxG0dOQmmDDN1QMK')
+SARVAM_API_KEY = os.environ.get('SARVAM_API_KEY', 'sk_m7rroju6_ZCqPwKRzKDt79v8FEGaUOWvY')
 GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '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')
 
 # Function: Translate using Sarvam
