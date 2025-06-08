@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Zap, Code, FileText, BookOpen, Loader2, ArrowRight, Clock, Globe, Copy, Check, RotateCw, AlertCircle } from 'lucide-react';
+import { Zap, Code, FileText, BookOpen, Loader2, Copy, Check, AlertCircle } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { darcula } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { API_ENDPOINTS } from '../config';
@@ -17,6 +17,7 @@ const CodeGenerator = () => {
     explanation: ''
   });
   const [user, setUser] = useState(null);
+  const [isCopied, setIsCopied] = useState(false);
   const navigate = useNavigate();
 
   const languages = [
@@ -29,7 +30,8 @@ const CodeGenerator = () => {
     { code: 'kn-IN', name: 'Kannada' },
     { code: 'mr-IN', name: 'Marathi' },
     { code: 'od-IN', name: 'Odia' },
-    { code: 'pa-IN', name: 'Punjabi' }
+    { code: 'pa-IN', name: 'Punjabi' },
+    { code: 'en-US', name: 'English' } // Added English for completeness
   ];
 
   useEffect(() => {
@@ -42,7 +44,10 @@ const CodeGenerator = () => {
   }, [navigate]);
 
   const handleGenerate = async () => {
-    if (!userInput.trim()) return;
+    if (!userInput.trim()) {
+      setError('Please enter a description for the code.');
+      return;
+    }
     setIsLoading(true);
     setError('');
     setResult({ translatedPrompt: '', codeOutput: '', explanation: '' });
@@ -59,28 +64,23 @@ const CodeGenerator = () => {
         }),
       });
 
-      if (!data.codeOutput && !data.code_output) {
-        setError('No code was generated. Please check your backend or try again.');
+      if (!data.codeOutput) {
+        setError('No code was generated. Please check your input or try again.');
         setResult({ translatedPrompt: '', codeOutput: '', explanation: '' });
       } else {
         setResult({
-          translatedPrompt: data.translatedPrompt || data.translated_prompt || '',
-          codeOutput: data.codeOutput || data.code_output || '',
-          explanation: data.explanation || ''
+          translatedPrompt: data.translatedPrompt || '',
+          codeOutput: data.codeOutput || '',
+          explanation: data.explanation || 'No explanation provided.'
         });
       }
     } catch (err) {
-      setError('Failed to generate code. Please try again.');
+      setError('Failed to generate code. Please try again or check your connection.');
+      console.error('Error in handleGenerate:', err);
     } finally {
       setIsLoading(false);
     }
   };
-
-  const formatLanguageName = (language) => {
-    return language.name;
-  };
-
-  const [isCopied, setIsCopied] = useState(false);
 
   const handleCopyCode = () => {
     if (result.codeOutput) {
@@ -90,26 +90,29 @@ const CodeGenerator = () => {
     }
   };
 
+  const getLanguageName = (code) => {
+    const lang = languages.find(lang => lang.code === code);
+    return lang ? lang.name : 'Unknown';
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <h1 className="text-2xl font-bold text-gray-900">Code Generator</h1>
         </div>
       </header>
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Input and Output Sections */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Left Side - Input */}
+          {/* Input Section */}
           <div className="bg-white rounded-xl shadow-md p-6">
             <h2 className="text-xl font-semibold mb-4 text-gray-900">Input</h2>
-            <form onSubmit={e => { e.preventDefault(); handleGenerate(); }}>
+            <form onSubmit={(e) => { e.preventDefault(); handleGenerate(); }}>
               <div className="mb-6">
                 <label className="block text-gray-700 font-medium mb-2">Select Your Language</label>
                 <select
                   value={languageCode}
-                  onChange={e => setLanguageCode(e.target.value)}
+                  onChange={(e) => setLanguageCode(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   {languages.map(lang => (
@@ -124,7 +127,7 @@ const CodeGenerator = () => {
                   className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="e.g., Write a Python function to calculate Fibonacci sequence"
                   value={userInput}
-                  onChange={e => setUserInput(e.target.value)}
+                  onChange={(e) => setUserInput(e.target.value)}
                 ></textarea>
               </div>
               <button
@@ -132,7 +135,7 @@ const CodeGenerator = () => {
                 className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 flex items-center justify-center"
                 disabled={isLoading}
               >
-                 {isLoading ? (
+                {isLoading ? (
                   <>
                     <Loader2 className="animate-spin mr-2" size={20} />
                     Generating...
@@ -145,48 +148,74 @@ const CodeGenerator = () => {
                 )}
               </button>
             </form>
-             {error && (
-              <p className="mt-4 text-sm text-red-600 flex items-center"><AlertCircle className="mr-2" size={16} />{error}</p>
+            {error && (
+              <p className="mt-4 text-sm text-red-600 flex items-center">
+                <AlertCircle className="mr-2" size={16} />
+                {error}
+              </p>
             )}
           </div>
 
-          {/* Right Side - Output */}
+          {/* Output Section */}
           <div className="bg-white rounded-xl shadow-md p-6">
             <h2 className="text-xl font-semibold mb-4 text-gray-900">Output</h2>
 
-             {/* Translated Prompt */}
-             <div className="mb-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-2 flex items-center"><FileText className="mr-2" size={20} />Translated Prompt</h3>
+            {/* Translated Prompt */}
+            <div className="mb-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-2 flex items-center">
+                <FileText className="mr-2" size={20} />
+                Translated Prompt
+              </h3>
               <div className="bg-gray-100 p-4 rounded-lg text-gray-700 whitespace-pre-wrap break-words text-sm">
-                 {result.translatedPrompt || 'Your translated prompt will appear here...'}
+                {result.translatedPrompt || 'Your translated prompt will appear here...'}
               </div>
             </div>
 
             {/* Code Output */}
             <div className="mb-6">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg font-medium text-gray-900 flex items-center"><Code className="mr-2" size={20} />Code Output</h3>
-                 {result.codeOutput && (
-                   <button
+                <h3 className="text-lg font-medium text-gray-900 flex items-center">
+                  <Code className="mr-2" size={20} />
+                  Code Output
+                </h3>
+                {result.codeOutput && (
+                  <button
                     onClick={handleCopyCode}
                     className="flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium"
                   >
-                    {isCopied ? <><Check className="mr-1" size={16} /> Copied!</> : <><Copy className="mr-1" size={16} /> Copy Code</>}
-                   </button>
-                 )}
+                    {isCopied ? (
+                      <>
+                        <Check className="mr-1" size={16} />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="mr-1" size={16} />
+                        Copy Code
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
-               {result.codeOutput ? (
+              {result.codeOutput ? (
                 <div className="rounded-lg overflow-hidden">
                   <SyntaxHighlighter language="python" style={darcula}>
                     {result.codeOutput}
                   </SyntaxHighlighter>
                 </div>
-              ) : ( <div className="bg-gray-100 p-4 rounded-lg text-gray-700 text-sm">Your generated code will appear here...</div> )}
+              ) : (
+                <div className="bg-gray-100 p-4 rounded-lg text-gray-700 text-sm">
+                  Your generated code will appear here...
+                </div>
+              )}
             </div>
 
             {/* Explanation */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2 flex items-center"><BookOpen className="mr-2" size={20} />Explanation</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2 flex items-center">
+                <BookOpen className="mr-2" size={20} />
+                Explanation (in {getLanguageName(languageCode)})
+              </h3>
               <div className="bg-gray-100 p-4 rounded-lg text-gray-700 whitespace-pre-wrap break-words text-sm">
                 {result.explanation || 'Explanation of the code will appear here...'}
               </div>
