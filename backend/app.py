@@ -283,10 +283,12 @@ def translate_to_english(user_input, source_language_code):
         "api-subscription-key": SARVAM_API_KEY,
         "Content-Type": "application/json"
     }
+    # Convert language code to Sarvam format if needed
+    source_code = source_language_code.split('-')[0] if '-' in source_language_code else source_language_code
     payload = {
         "input": user_input,
-        "source_language_code": source_language_code,
-        "target_language_code": "en-IN"
+        "source_language_code": source_code,
+        "target_language_code": "en"
     }
     try:
         response = requests.post(url, headers=headers, json=payload)
@@ -463,10 +465,12 @@ def translate_from_english(text, target_language_code):
         "api-subscription-key": SARVAM_API_KEY,
         "Content-Type": "application/json"
     }
+    # Convert language code to Sarvam format if needed
+    target_code = target_language_code.split('-')[0] if '-' in target_language_code else target_language_code
     payload = {
         "input": text,
-        "source_language_code": "en-IN", # Assuming English source
-        "target_language_code": target_language_code
+        "source_language_code": "en",
+        "target_language_code": target_code
     }
     try:
         response = requests.post(url, headers=headers, json=payload)
@@ -692,8 +696,8 @@ def generate_code_from_plan():
             code_data = json.loads(code_output)
             explanation = code_data.get('explanation', '')
             
-            # Translate the explanation back to the user's language
-            translated_explanation = translate_to_english(explanation, user_language_code)
+            # Translate the explanation from English to user's language
+            translated_explanation = translate_from_english(explanation, user_language_code)
             
             return jsonify({
                 'code_output': code_data.get('code_output', ''),
@@ -703,7 +707,7 @@ def generate_code_from_plan():
             # If JSON parsing fails, return the raw output
             return jsonify({
                 'code_output': code_output,
-                'explanation': translate_to_english('Generated code implementation', user_language_code)
+                'explanation': translate_from_english('Generated code implementation', user_language_code)
             })
 
     except Exception as e:
