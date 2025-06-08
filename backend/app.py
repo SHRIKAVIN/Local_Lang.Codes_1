@@ -296,7 +296,7 @@ def translate_to_english(user_input, source_language_code):
         if response.status_code == 200 and 'translated_text' in response_json:
             return response_json['translated_text']
         else:
-            logger.error(f"Translation failed for input '{user_input}' from {source_language_code} to en-IN. Status: {response.status_code}, Response: {response.text}")
+            logger.error(f"Translation failed: {response_json}")
             return "Translation Failed!"
     except Exception as e:
         logger.error(f"Translation error: {str(e)}")
@@ -476,7 +476,7 @@ def translate_from_english(text, target_language_code):
         if response.status_code == 200 and 'translated_text' in response_json:
             return response_json['translated_text']
         else:
-            logger.error(f"Translation failed for input '{text}' from en-IN to {target_language_code}. Status: {response.status_code}, Response: {response.text}")
+            logger.error(f"Translation from English failed: {response_json}")
             return "Translation Failed!"
     except Exception as e:
         logger.error(f"Translation from English error: {str(e)}")
@@ -692,8 +692,8 @@ def generate_code_from_plan():
             code_data = json.loads(code_output)
             explanation = code_data.get('explanation', '')
             
-            # Translate the explanation from English to user's language
-            translated_explanation = translate_from_english(explanation, user_language_code)
+            # Translate the explanation back to the user's language
+            translated_explanation = translate_to_english(explanation, user_language_code)
             
             return jsonify({
                 'code_output': code_data.get('code_output', ''),
@@ -703,7 +703,7 @@ def generate_code_from_plan():
             # If JSON parsing fails, return the raw output
             return jsonify({
                 'code_output': code_output,
-                'explanation': translate_from_english('Generated code implementation', user_language_code)
+                'explanation': translate_to_english('Generated code implementation', user_language_code)
             })
 
     except Exception as e:
