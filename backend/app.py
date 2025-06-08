@@ -645,38 +645,70 @@ def generate_app_plan_route(current_user):
         return jsonify({'error': 'An internal error occurred during app plan generation'}), 500
 
 # Generate Code from App Plan route
-@app.route('/generate_code_from_plan', methods=['POST'])
-@token_required
-def generate_code_from_plan_route(current_user):
+@app.route('/generate-code-from-plan', methods=['POST'])
+def generate_code_from_plan():
     try:
         data = request.json
         app_plan_text = data.get('app_plan_text')
-
+        user_language_code = data.get('user_language_code', 'en')  # Default to English if not specified
+        
         if not app_plan_text:
-            return jsonify({'error': 'Missing app_plan_text'}), 400
+            return jsonify({'error': 'App plan text is required'}), 400
 
-        logger.info(f"Received request to generate code from plan for user {current_user['email']}")
+        # First, translate the app plan to English for the AI
+        translated_plan = translate_to_english(app_plan_text, user_language_code)
+        
+        # Generate code using the translated plan
+        code_prompt = f"""Based on this app plan, generate a complete, production-ready code implementation. 
+        Include all necessary files, dependencies, and setup instructions.
+        The code should be well-documented and follow best practices.
+        
+        App Plan:
+        {translated_plan}
+        
+        Please provide:
+        1. A complete codebase structure
+        2. All necessary files with their contents
+        3. Setup instructions
+        4. Dependencies list
+        5. A brief explanation of the implementation
+        
+        Format the response as a JSON object with the following structure:
+        {{
+            "code_output": "The complete code implementation",
+            "explanation": "A brief explanation of the implementation"
+        }}"""
 
-        code_output, explanation = generate_code_from_plan_text(app_plan_text)
+        response = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
+            json={"model": "gpt-4", "messages": [{"role": "user", "content": code_prompt}], "temperature": 0.7, "max_tokens": 4000}
+        )
 
-        if code_output.startswith("Error:"):
-            logger.error(f"Code generation from plan failed for user {current_user['email']}: {code_output}")
+        code_output = response.json()['choices'][0]['message']['content']
+
+        # Parse the JSON response
+        try:
+            code_data = json.loads(code_output)
+            explanation = code_data.get('explanation', '')
+            
+            # Translate the explanation back to the user's language
+            translated_explanation = translate_to_english(explanation, user_language_code)
+            
             return jsonify({
-                'error': f'Code generation failed: {code_output}',
-                'codeOutput': None,
-                'explanation': None
-            }), 500
+                'code_output': code_data.get('code_output', ''),
+                'explanation': translated_explanation
+            })
+        except json.JSONDecodeError:
+            # If JSON parsing fails, return the raw output
+            return jsonify({
+                'code_output': code_output,
+                'explanation': translate_to_english('Generated code implementation', user_language_code)
+            })
 
-        # Add generated code to history (optional)
-        # add_to_history(current_user['email'], {'type': 'code_from_plan', 'input': app_plan_text, 'output': code_output})
-
-        return jsonify({
-            'codeOutput': code_output,
-            'explanation': explanation
-        })
     except Exception as e:
-        logger.error(f"Error in generate_code_from_plan_route for user {current_user['email']}: {str(e)}", exc_info=True)
-        return jsonify({'error': 'An internal error occurred during code generation from plan'}), 500
+        logger.error(f"Error in generate_code_from_plan: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 # Run server
 if __name__ == "__main__":

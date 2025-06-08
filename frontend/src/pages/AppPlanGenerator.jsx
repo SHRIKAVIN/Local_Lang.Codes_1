@@ -145,7 +145,8 @@ const AppPlanGenerator = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          app_plan_text: result.appPlanOutput
+          app_plan_text: result.appPlanOutput,
+          user_language_code: languageCode
         }),
       });
 
