@@ -105,38 +105,49 @@ def refresh_token():
     try:
         refresh_token = request.json.get('refresh_token')
         if not refresh_token:
+            logger.error("Refresh token is missing in request")
             return jsonify({'error': 'Refresh token is missing'}), 400
 
         try:
             # Verify the refresh token
+            logger.info("Attempting to decode refresh token")
             data = jwt.decode(refresh_token, app.config['SECRET_KEY'], algorithms=["HS256"])
             email = data['email']
             
             # Check if user exists
             users = load_users()
             if email not in users:
+                logger.error(f"User {email} not found during token refresh")
                 return jsonify({'error': 'Invalid refresh token'}), 401
 
             # Generate new access token
+            logger.info(f"Generating new access token for user {email}")
             new_token = jwt.encode({
                 'email': email,
                 'exp': datetime.datetime.utcnow() + TOKEN_EXPIRY
             }, app.config['SECRET_KEY'])
 
             # Generate new refresh token
+            logger.info(f"Generating new refresh token for user {email}")
             new_refresh_token = jwt.encode({
                 'email': email,
                 'exp': datetime.datetime.utcnow() + REFRESH_TOKEN_EXPIRY
             }, app.config['SECRET_KEY'])
 
+            logger.info(f"Token refresh successful for user {email}")
             return jsonify({
                 'token': new_token,
                 'refresh_token': new_refresh_token
             })
 
         except jwt.ExpiredSignatureError:
+            logger.error("Refresh token has expired")
             return jsonify({'error': 'Refresh token has expired', 'code': 'REFRESH_TOKEN_EXPIRED'}), 401
-        except:
+        except jwt.InvalidTokenError as e:
+            logger.error(f"Invalid refresh token: {str(e)}")
+            return jsonify({'error': 'Invalid refresh token'}), 401
+        except Exception as e:
+            logger.error(f"Unexpected error during token refresh: {str(e)}")
             return jsonify({'error': 'Invalid refresh token'}), 401
 
     except Exception as e:
