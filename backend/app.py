@@ -200,7 +200,7 @@ def get_user(current_user):
 
 # API Keys
 SARVAM_API_KEY = 'sk_vyr4ze68_kzjm76DIOxG0dOQmmDDN1QMK'  # <-- your Sarvam API Key
-GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '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') # Using environment variable for API Key
+GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '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') # Using environment variable for API Key
 
 # Function: Translate using Sarvam
 def translate_to_english(user_input, source_language_code):
