@@ -271,12 +271,18 @@ def get_user(current_user):
         return jsonify({'error': 'Failed to fetch user data'}), 500
 
 # API Keys (should be stored in environment variables)
-SARVAM_API_KEY = os.environ.get('SARVAM_API_KEY', 'sk_m7rroju6_ZCqPwKRzKDt79v8FEGaUOWvY')
+SARVAM_API_KEY = os.environ.get('SARVAM_API_KEY', 'sk_vyr4ze68_kzjm76DIOxG0dOQmmDDN1QMK')
 GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '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')
 
 # Function: Translate using Sarvam
 def translate_to_english(user_input, source_language_code):
     logger.info(f"Translating text: {user_input[:100]}... from {source_language_code}")
+    
+    # Check input length (Sarvam mayura:v1 limit is 1000 characters)
+    if len(user_input) > 1000:
+        logger.warning(f"Input text exceeds 1000 characters ({len(user_input)}). Truncating.")
+        user_input = user_input[:1000]
+
     url = "https://api.sarvam.ai/translate"
     headers = {
         "api-subscription-key": SARVAM_API_KEY,
@@ -304,6 +310,12 @@ def translate_to_english(user_input, source_language_code):
 # Function: Translate from English using Sarvam
 def translate_from_english(text, target_language_code):
     logger.info(f"Translating text from English to {target_language_code}")
+    
+    # Check input length (Sarvam mayura:v1 limit is 1000 characters)
+    if len(text) > 1000:
+        logger.warning(f"Input text exceeds 1000 characters ({len(text)}). Truncating.")
+        text = text[:1000]
+
     url = "https://api.sarvam.ai/translate"
     headers = {
         "api-subscription-key": SARVAM_API_KEY,
@@ -674,60 +686,33 @@ def generate_code_from_plan(current_user):
     try:
         data = request.json
         app_plan_text = data.get('app_plan_text')
-        user_language_code = data.get('user_language_code', 'en-US')
 
         if not app_plan_text:
             logger.error(f"Missing app_plan_text for user {current_user['email']}")
             return jsonify({'error': 'App plan text is required'}), 400
 
-        logger.info(f"Generating code from app plan for user {current_user['email']}, language: {user_language_code}")
+        logger.info(f"Generating code from app plan for user {current_user['email']}")
 
-        # Check input length for Sarvam API
-        if len(app_plan_text) > 2000:
-            logger.warning(f"App plan text for user {current_user['email']} exceeds 2000 characters ({len(app_plan_text)}). Truncating.")
-            app_plan_text = app_plan_text[:2000]
-
-        # Translate the app plan to English for Groq
-        translated_plan = translate_to_english(app_plan_text, user_language_code) if user_language_code != 'en-US' else app_plan_text
-
-        if translated_plan == "Translation Failed!":
-            logger.error(f"Translation of app plan failed for user {current_user['email']}")
-            return jsonify({
-                'error': 'Translation of app plan failed. Please try again.',
-                'codeOutput': None,
-                'explanation': None
-            }), 500
-
-        code_output, explanation_english = generate_code_from_plan_text(translated_plan)
+        # Generate code directly from app_plan_text (no translation)
+        code_output, explanation = generate_code_from_plan_text(app_plan_text)
 
         if code_output.startswith("Error:"):
             logger.error(f"Code generation from plan failed for user {current_user['email']}: {code_output}")
             return jsonify({
                 'error': f'Code generation failed: {code_output}',
-                'codeOutput': None,
-                'explanation': None
+                'codeOutput': None
             }), 500
-
-        # Translate explanation to user's language
-        explanation = translate_from_english(explanation_english, user_language_code) if user_language_code != 'en-US' else explanation_english
-
-        if explanation == "Translation Failed!":
-            logger.warning(f"Code explanation translation failed for user {current_user['email']}. Using English.")
-            explanation = explanation_english
 
         # Save to history
         add_to_history(current_user['email'], {
             'type': 'code_from_plan',
             'input': app_plan_text,
-            'translatedPlan': translated_plan,
             'codeOutput': code_output,
-            'explanation': explanation,
-            'languageCode': user_language_code
+            'explanation': explanation
         })
 
         return jsonify({
-            'codeOutput': code_output,
-            'explanation': explanation
+            'codeOutput': code_output
         })
 
     except Exception as e:
