@@ -283,13 +283,8 @@ def translate_to_english(user_input, source_language_code):
         "api-subscription-key": SARVAM_API_KEY,
         "Content-Type": "application/json"
     }
-    # Truncate input to 2000 characters if it exceeds the limit for Sarvam.ai
-    truncated_input = user_input[:2000]
-    if len(user_input) > 2000:
-        logger.warning(f"User input for translation truncated from {len(user_input)} to 2000 characters.")
-
     payload = {
-        "input": truncated_input,
+        "input": user_input,
         "source_language_code": source_language_code,
         "target_language_code": "en-IN"
     }
@@ -301,7 +296,7 @@ def translate_to_english(user_input, source_language_code):
         if response.status_code == 200 and 'translated_text' in response_json:
             return response_json['translated_text']
         else:
-            logger.error(f"Translation failed for input '{user_input}' from {source_language_code} to en-IN. Status: {response.status_code}, Response: {response.text}")
+            logger.error(f"Translation failed: {response_json}")
             return "Translation Failed!"
     except Exception as e:
         logger.error(f"Translation error: {str(e)}")
@@ -468,13 +463,8 @@ def translate_from_english(text, target_language_code):
         "api-subscription-key": SARVAM_API_KEY,
         "Content-Type": "application/json"
     }
-    # Truncate input to 2000 characters if it exceeds the limit for Sarvam.ai
-    truncated_text = text[:2000]
-    if len(text) > 2000:
-        logger.warning(f"Explanation text for translation truncated from {len(text)} to 2000 characters.")
-
     payload = {
-        "input": truncated_text,
+        "input": text,
         "source_language_code": "en-IN", # Assuming English source
         "target_language_code": target_language_code
     }
@@ -486,7 +476,7 @@ def translate_from_english(text, target_language_code):
         if response.status_code == 200 and 'translated_text' in response_json:
             return response_json['translated_text']
         else:
-            logger.error(f"Translation failed for input '{text}' from en-IN to {target_language_code}. Status: {response.status_code}, Response: {response.text}")
+            logger.error(f"Translation from English failed: {response_json}")
             return "Translation Failed!"
     except Exception as e:
         logger.error(f"Translation from English error: {str(e)}")
