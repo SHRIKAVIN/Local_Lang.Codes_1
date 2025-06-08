@@ -8,7 +8,7 @@ export const API_ENDPOINTS = {
   USER: `${API_BASE_URL}/user`,
   PROCESS: `${API_BASE_URL}/process`,
   GENERATE_APP_PLAN: `${API_BASE_URL}/generate_app_plan`,
-  GENERATE_CODE_FROM_PLAN: `${API_BASE_URL}/generate_code_from_plan`,
+  GENERATE_CODE_FROM_PLAN: `${API_BASE_URL}/generate-code-from-plan`,
   HISTORY: `${API_BASE_URL}/history`,
   REFRESH_TOKEN: `${API_BASE_URL}/refresh-token`,
 };
