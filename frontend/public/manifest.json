@@ -1,0 +1,21 @@
+{
+  "name": "LocalLang.Codes",
+  "short_name": "LocalLang",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f9f9f9",
+  "theme_color": "#2563eb",
+  "description": "Code Generation in Indian Languages",
+  "icons": [
+    {
+      "src": "frontend/public/7nOO1WoL_400x400.jpg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "frontend/public/7nOO1WoL_400x400.jpg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+} 
