@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Lock, Globe, Bell, Shield, Save, Loader2, AlertCircle } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const Settings = () => {
-  const [user, setUser] = useState(null);
+  const { user, loading, updateProfile } = useAuth();
   const [settings, setSettings] = useState({
     defaultLanguage: 'English',
     emailNotifications: true,
@@ -12,16 +13,15 @@ const Settings = () => {
   });
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (!storedUser) {
+    if (!loading && !user) {
       navigate('/login');
       return;
     }
-    setUser(JSON.parse(storedUser));
-  }, [navigate]);
+  }, [user, loading, navigate]);
 
   const handleSettingChange = (key, value) => {
     setSettings(prev => ({
@@ -33,6 +33,8 @@ const Settings = () => {
   const handleSave = async () => {
     setIsSaving(true);
     setError('');
+    setSuccess('');
+    
     // Simulate API call
     try {
        // In a real application, you would send settings to your backend here
@@ -42,7 +44,17 @@ const Settings = () => {
        if (settings.defaultLanguage === 'Klingon') {
            throw new Error('Klingon is not a supported language for settings yet!');
        }
-       alert('Settings saved successfully!');
+       
+       // Update user profile with new settings
+       const { error: updateError } = await updateProfile({
+         settings: settings
+       });
+       
+       if (updateError) {
+         throw updateError;
+       }
+       
+       setSuccess('Settings saved successfully!');
     } catch (err) {
         setError(err.message);
     } finally {
@@ -64,6 +76,12 @@ const Settings = () => {
                     <AlertCircle className="flex-shrink-0 inline w-4 h-4 me-3" />
                     <div><span className="font-medium">Error:</span> {error}</div>
                 </div>
+            )}
+            {success && (
+              <div className="flex items-center p-4 mb-6 text-sm text-green-800 border border-green-300 rounded-lg bg-green-50" role="alert">
+                <AlertCircle className="flex-shrink-0 inline w-4 h-4 me-3" />
+                <div><span className="font-medium">Success:</span> {success}</div>
+              </div>
             )}
 
             {/* Account Settings */}

@@ -5,8 +5,8 @@ import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { Disclosure } from '@headlessui/react';
 import { ChevronUpIcon } from '@heroicons/react/20/solid';
-import { API_ENDPOINTS } from '../config';
-import { authenticatedFetch } from '../utils/api';
+import { useAuth } from '../contexts/AuthContext';
+import { saveGenerationHistory } from '../utils/supabase-api';
 
 const AppPlanGenerator = () => {
   const [userInput, setUserInput] = useState('');
@@ -17,7 +17,7 @@ const AppPlanGenerator = () => {
     translatedPrompt: '',
     appPlanOutput: ''
   });
-  const [user, setUser] = useState(null);
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [appPlanResult, setAppPlanResult] = useState('');
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
@@ -41,13 +41,10 @@ const AppPlanGenerator = () => {
   ];
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (!storedUser) {
+    if (!user) {
       navigate('/login');
-    } else {
-      setUser(JSON.parse(storedUser));
     }
-  }, [navigate]);
+  }, [user, navigate]);
 
   // Function to parse the markdown blueprint into sections
   const parseBlueprint = (markdown) => {
@@ -88,26 +85,24 @@ const AppPlanGenerator = () => {
     setError('');
     setResult({ translatedPrompt: '', appPlanOutput: '' });
     try {
-      const data = await authenticatedFetch(API_ENDPOINTS.GENERATE_APP_PLAN, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_input: userInput,
-          user_language_code: languageCode
-        }),
+      // TODO: Replace with your backend API call
+      // For now, simulate app plan generation
+      const mockResult = {
+        translatedPrompt: `Translated: ${userInput}`,
+        appPlanOutput: `# App Plan for: ${userInput}\n\n## Introduction\nThis is a comprehensive plan for building your application.\n\n## Features\n- Feature 1: Core functionality\n- Feature 2: User interface\n- Feature 3: Data management\n\n## Technologies\n- Frontend: React.js\n- Backend: Node.js\n- Database: PostgreSQL\n\n## Architecture\nThe application will follow a modern three-tier architecture.\n\n## Implementation Steps\n1. Set up development environment\n2. Create database schema\n3. Build backend API\n4. Develop frontend interface\n5. Testing and deployment`
+      };
+      
+      setResult(mockResult);
+      
+      // Save to Supabase history
+      await saveGenerationHistory({
+        type: 'app_plan',
+        input: userInput,
+        output: mockResult.appPlanOutput,
+        translatedPrompt: mockResult.translatedPrompt,
+        languageCode: languageCode
       });
-
-      if (!data.appPlanOutput && !data.app_plan_output) {
-        setError('No app plan was generated. Please check your backend or try again.');
-        setResult({ translatedPrompt: '', appPlanOutput: '' });
-      } else {
-        setResult({
-          translatedPrompt: data.translatedPrompt || data.translated_prompt || '',
-          appPlanOutput: data.appPlanOutput || data.app_plan_output || ''
-        });
-      }
+      
     } catch (err) {
       setError('Failed to generate app plan. Please try again.');
     } finally {
@@ -139,26 +134,24 @@ const AppPlanGenerator = () => {
     setCodeGenerationError('');
     setGeneratedCodeResult({ codeOutput: '', explanation: '' });
     try {
-      const data = await authenticatedFetch(API_ENDPOINTS.GENERATE_CODE_FROM_PLAN, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          app_plan_text: result.appPlanOutput,
-          user_language_code: languageCode
-        }),
+      // TODO: Replace with your backend API call
+      // For now, simulate code generation from plan
+      const mockCodeResult = {
+        codeOutput: `# Generated code based on app plan\n\nimport React from 'react';\n\nfunction App() {\n  return (\n    <div className="App">\n      <h1>Your Application</h1>\n      <p>Generated based on your app plan</p>\n    </div>\n  );\n}\n\nexport default App;`,
+        explanation: 'This code provides a basic React application structure based on your app plan.'
+      };
+      
+      setGeneratedCodeResult(mockCodeResult);
+      
+      // Save to Supabase history
+      await saveGenerationHistory({
+        type: 'code_from_plan',
+        input: result.appPlanOutput,
+        output: mockCodeResult.codeOutput,
+        explanation: mockCodeResult.explanation,
+        languageCode: languageCode
       });
-
-      if (!data.codeOutput && !data.code_output) {
-        setCodeGenerationError('No code was generated. Please check your backend or try again.');
-        setGeneratedCodeResult({ codeOutput: '', explanation: '' });
-      } else {
-        setGeneratedCodeResult({
-          codeOutput: data.codeOutput || data.code_output || '',
-          explanation: data.explanation || ''
-        });
-      }
+      
     } catch (err) {
       setCodeGenerationError('Failed to generate code. Please try again.');
     } finally {

@@ -1,19 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Code, Globe, Zap, BookOpen, Star, Users, Shield } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const Home = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
-    setIsLoggedIn(!!token);
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-  }, []);
+  const { user } = useAuth();
 
   const features = [
     {
@@ -109,7 +100,7 @@ const Home = () => {
             <p className="text-lg md:text-xl lg:text-2xl mb-6 md:mb-8 text-blue-100">
               Transform your ideas into code using natural language in your native tongue
             </p>
-            {!isLoggedIn ? (
+            {!user ? (
               <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
                 <Link
                   to="/signup"
@@ -241,7 +232,7 @@ const Home = () => {
               <p className="text-base md:text-xl mb-6 md:mb-8 text-blue-100">
                 Join thousands of developers creating amazing things
               </p>
-              {!isLoggedIn ? (
+              {!user ? (
                 <Link
                   to="/signup"
                   className="inline-block bg-white text-blue-600 px-8 py-3 rounded-lg font-medium hover:bg-blue-50 transition-colors"

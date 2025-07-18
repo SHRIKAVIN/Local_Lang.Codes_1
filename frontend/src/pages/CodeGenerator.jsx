@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Zap, Code, FileText, BookOpen, Loader2, Copy, Check, AlertCircle } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { darcula } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { API_ENDPOINTS } from '../config';
-import { authenticatedFetch } from '../utils/api';
+import { useAuth } from '../contexts/AuthContext';
+import { saveGenerationHistory } from '../utils/supabase-api';
 
 const CodeGenerator = () => {
   const [userInput, setUserInput] = useState('');
@@ -16,8 +16,8 @@ const CodeGenerator = () => {
     codeOutput: '',
     explanation: ''
   });
-  const [user, setUser] = useState(null);
   const [isCopied, setIsCopied] = useState(false);
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const languages = [
@@ -35,13 +35,10 @@ const CodeGenerator = () => {
   ];
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (!storedUser) {
+    if (!user) {
       navigate('/login');
-    } else {
-      setUser(JSON.parse(storedUser));
     }
-  }, [navigate]);
+  }, [user, navigate]);
 
   const handleGenerate = async () => {
     if (!userInput.trim()) {
@@ -52,28 +49,26 @@ const CodeGenerator = () => {
     setError('');
     setResult({ translatedPrompt: '', codeOutput: '', explanation: '' });
     try {
-      const data = await authenticatedFetch(API_ENDPOINTS.PROCESS, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_input: userInput,
-          user_language_code: languageCode,
-          choice: 'code'
-        }),
+      // TODO: Replace with your backend API call
+      // For now, simulate code generation
+      const mockResult = {
+        translatedPrompt: `Translated: ${userInput}`,
+        codeOutput: `# Generated Python code for: ${userInput}\n\ndef main():\n    print("Hello, World!")\n    # Your code implementation here\n    pass\n\nif __name__ == "__main__":\n    main()`,
+        explanation: `This code demonstrates a basic Python structure for: ${userInput}`
+      };
+      
+      setResult(mockResult);
+      
+      // Save to Supabase history
+      await saveGenerationHistory({
+        type: 'code',
+        input: userInput,
+        output: mockResult.codeOutput,
+        translatedPrompt: mockResult.translatedPrompt,
+        explanation: mockResult.explanation,
+        languageCode: languageCode
       });
-
-      if (!data.codeOutput) {
-        setError('No code was generated. Please check your input or try again.');
-        setResult({ translatedPrompt: '', codeOutput: '', explanation: '' });
-      } else {
-        setResult({
-          translatedPrompt: data.translatedPrompt || '',
-          codeOutput: data.codeOutput || '',
-          explanation: data.explanation || 'No explanation provided.'
-        });
-      }
+      
     } catch (err) {
       setError('Failed to generate code. Please try again or check your connection.');
       console.error('Error in handleGenerate:', err);

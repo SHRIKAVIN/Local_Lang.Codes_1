@@ -1,12 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Bell, User, LogOut, Settings, Menu, X, Code, Loader2, Terminal, Zap, IndianRupee } from 'lucide-react';
-import { API_ENDPOINTS } from '../config';
-import { authenticatedFetch } from '../utils/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const Navbar = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState(null);
+  const { user, signOut, loading } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [notificationsError, setNotificationsError] = useState('');
@@ -18,47 +16,6 @@ const Navbar = () => {
   const profileMenuRef = useRef(null);
   const notificationsRef = useRef(null);
   const mobileMenuRef = useRef(null);
-
-  const fetchUserData = async (token) => {
-    try {
-      const data = await authenticatedFetch(API_ENDPOINTS.USER);
-      if (data.error) {
-        console.error('Error fetching user data:', data.error);
-        // If token is invalid, clear storage and redirect to login
-        localStorage.removeItem('token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('user');
-        setIsLoggedIn(false);
-        setUser(null);
-        navigate('/login');
-      } else if (data.user) {
-        setUser(data.user);
-        localStorage.setItem('user', JSON.stringify(data.user));
-      }
-    } catch (err) {
-      console.error('Error fetching user data:', err);
-      // If there's an error, clear storage and redirect to login
-      localStorage.removeItem('token');
-      localStorage.removeItem('refresh_token');
-      localStorage.removeItem('user');
-      setIsLoggedIn(false);
-      setUser(null);
-      navigate('/login');
-    }
-  };
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
-    setIsLoggedIn(!!token);
-    if (token) {
-      fetchUserData(token);
-    } else if (storedUser) {
-       // If token is not present but user is in localStorage, clear user as it's invalid
-       localStorage.removeItem('user');
-       setUser(null);
-    }
-  }, [location.pathname]);
 
   // Close menus when clicking outside
   useEffect(() => {
@@ -85,29 +42,14 @@ const Navbar = () => {
     setIsLoadingNotifications(true);
     setNotificationsError('');
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
+      if (!user) {
         // User not logged in, no notifications to fetch
         setIsLoadingNotifications(false);
         return;
       }
-      const response = await fetch(API_ENDPOINTS.HISTORY, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      if (data.error) {
-        setNotificationsError(data.error);
-        setNotifications([]);
-      } else if (data.history) {
-        // Sort history by timestamp
-        const sortedHistory = data.history.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        setNotifications(sortedHistory);
-      } else {
-        setNotificationsError('Unexpected response format for notifications.');
-        setNotifications([]);
-      }
+      // TODO: Implement notification fetching with Supabase
+      // For now, set empty notifications
+      setNotifications([]);
     } catch (err) {
       console.error('Error fetching notifications:', err);
       setNotificationsError('Failed to fetch notifications.');
@@ -124,13 +66,13 @@ const Navbar = () => {
     setShowNotifications(!showNotifications);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user');
-    setIsLoggedIn(false);
-    setUser(null);
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   // Check if on Code Generator page
@@ -191,7 +133,7 @@ const Navbar = () => {
 
           {/* Right side - Auth Links / User Menu */}
           <div className="flex items-center">
-            {!isLoggedIn ? (
+            {!user ? (
               <div className="hidden sm:flex sm:items-center sm:ml-6 space-x-4">
                 <Link
                   to="/login"
@@ -267,7 +209,9 @@ const Navbar = () => {
                       aria-orientation="vertical"
                       aria-labelledby="user-menu-button"
                     >
-                      <span className="block px-4 py-2 text-sm text-gray-700">{user?.name || 'User'}</span>
+                      <span className="block px-4 py-2 text-sm text-gray-700">
+                        {user?.user_metadata?.name || user?.email || 'User'}
+                      </span>
                        <Link
                          to="/profile"
                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -365,7 +309,9 @@ const Navbar = () => {
                    <User className="h-10 w-10 rounded-full text-gray-400" />
                  </div>
                  <div className="ml-3">
-                   <div className="text-base font-medium text-gray-800">{user?.name || 'User'}</div>
+                   <div className="text-base font-medium text-gray-800">
+                     {user?.user_metadata?.name || user?.email || 'User'}
+                   </div>
                    <div className="text-sm font-medium text-gray-500">{user?.email || 'N/A'}</div>
                  </div>
                   {/* Mobile Notifications Icon */}
@@ -414,7 +360,7 @@ const Navbar = () => {
                  </button>
                </div>
              </div>
-           ) : (
+           ) : !loading && (
              <div className="py-4 px-5 space-y-2 border-t border-gray-200">
                 <Link
                    to="/login"

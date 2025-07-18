@@ -1,56 +1,31 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Lock, Mail, AlertCircle } from 'lucide-react';
-import { API_ENDPOINTS } from '../config';
+import { useAuth } from '../contexts/AuthContext';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const { signIn, loading } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
     setError('');
 
     try {
-      const response = await fetch(API_ENDPOINTS.LOGIN, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-      console.log('Backend response data:', data);
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Login failed');
+      const { data, error: signInError } = await signIn(email, password);
+      
+      if (signInError) {
+        throw signInError;
       }
 
-      // Check if token and user data are present in the response
-      if (!data || !data.token || !data.user) {
-        console.error('Login response missing token or user data:', data);
-        throw new Error('Login failed: Invalid response from server.');
+      if (data?.user) {
+        navigate('/');
       }
-
-      // Store the token in localStorage
-      console.log('Storing token and user in localStorage...');
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('refresh_token', data.refresh_token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      console.log('localStorage after setting:', localStorage.getItem('token'), localStorage.getItem('user'));
-
-      // Redirect to home page
-      console.log('About to navigate to home page...');
-      navigate('/');
     } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
+      setError(err.message || 'An error occurred during sign in');
     }
   };
 
@@ -144,9 +119,9 @@ const Login = () => {
             <button
               type="submit"
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-              disabled={isLoading}
+              disabled={loading}
             >
-              {isLoading ? 'Signing In...' : 'Sign In'}
+              {loading ? 'Signing In...' : 'Sign In'}
             </button>
           </div>
         </form>

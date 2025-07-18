@@ -12,6 +12,7 @@
   "dependencies": {
     "@headlessui/react": "^2.2.4",
     "@heroicons/react": "^2.2.0",
+    "@supabase/supabase-js": "^2.52.0",
     "file-saver": "^2.0.5",
     "framer-motion": "^12.16.0",
     "jszip": "^3.10.1",

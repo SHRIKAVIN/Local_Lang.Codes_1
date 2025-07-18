@@ -1,55 +1,32 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, Clock, Loader2, AlertCircle } from 'lucide-react';
-import { API_ENDPOINTS } from '../config';
-import { authenticatedFetch } from '../utils/api';
+import { useAuth } from '../contexts/AuthContext';
+import { getGenerationHistory } from '../utils/supabase-api';
 
 const Profile = () => {
-  const [user, setUser] = useState(null);
+  const { user, loading } = useAuth();
   const [history, setHistory] = useState([]);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
-  const [userError, setUserError] = useState('');
   const [historyError, setHistoryError] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
+    if (!loading && !user) {
       navigate('/login');
       return;
     }
 
-    // Fetch User Data
-    const fetchUserData = async () => {
-      try {
-        const data = await authenticatedFetch(API_ENDPOINTS.USER);
-        if (data.error) {
-          setUserError(data.error);
-        } else if (data.user) {
-          setUser(data.user);
-        }
-      } catch (err) {
-        setUserError('Failed to fetch user data.');
-      } finally {
-        setIsLoadingUser(false);
-      }
-    };
-
     // Fetch Generation History
     const fetchHistory = async () => {
+      if (!user) return;
+      
       try {
-        const data = await authenticatedFetch(API_ENDPOINTS.HISTORY);
-        if (data.error) {
-          setHistoryError(data.error);
-        } else if (data.history) {
-          // Sort history by timestamp if available, otherwise keep original order
-          const sortedHistory = data.history.sort((a, b) => {
-              const dateA = new Date(a.timestamp);
-              const dateB = new Date(b.timestamp);
-              return dateB - dateA; // Sort descending (most recent first)
-          });
-          setHistory(sortedHistory);
+        const { data, error } = await getGenerationHistory();
+        if (error) {
+          setHistoryError(error.message);
+        } else {
+          setHistory(data || []);
         }
       } catch (err) {
         setHistoryError('Failed to fetch generation history.');
@@ -58,10 +35,11 @@ const Profile = () => {
       }
     };
 
-    fetchUserData();
-    fetchHistory();
+    if (user) {
+      fetchHistory();
+    }
 
-  }, [navigate]);
+  }, [user, loading, navigate]);
 
    // Helper function to format timestamp
   const formatTimestamp = (timestamp) => {
@@ -75,19 +53,8 @@ const Profile = () => {
     }
   };
 
-  if (isLoadingUser || isLoadingHistory) {
+  if (loading || isLoadingHistory) {
     return ( <div className="min-h-screen bg-gray-50 flex items-center justify-center"><Loader2 className="animate-spin text-blue-600" size={32} /></div> );
-  }
-
-  if (userError) {
-      return (
-          <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-              <div className="flex items-center p-4 text-sm text-red-800 border border-red-300 rounded-lg bg-red-50" role="alert">
-                  <AlertCircle className="flex-shrink-0 inline w-4 h-4 me-3" />
-                  <div><span className="font-medium">Error:</span> {userError}</div>
-              </div>
-          </div>
-      );
   }
 
   if (!user) {
@@ -117,11 +84,15 @@ const Profile = () => {
             <div className="space-y-4">
               <div>
                 <p className="text-sm font-medium text-gray-700">Name:</p>
-                <p className="mt-1 text-gray-900">{user.name}</p>
+                <p className="mt-1 text-gray-900">{user.user_metadata?.name || 'Not provided'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-700">Email:</p>
                 <p className="mt-1 text-gray-900 flex items-center"><Mail className="mr-1" size={16} />{user.email}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-700">Account Created:</p>
+                <p className="mt-1 text-gray-900">{new Date(user.created_at).toLocaleDateString()}</p>
               </div>
               {/* Add other user info here as needed */}
             </div>
@@ -139,7 +110,7 @@ const Profile = () => {
                   <li key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-sm font-medium text-gray-900 capitalize">{item.type || 'Generation'}</span>
-                      <span className="text-xs text-gray-500 flex items-center"><Clock className="mr-1" size={12} />{formatTimestamp(item.timestamp)}</span>
+                      <span className="text-xs text-gray-500 flex items-center"><Clock className="mr-1" size={12} />{formatTimestamp(item.created_at)}</span>
                     </div>
                     {item.input && (
                          <div className="mb-2">
@@ -147,6 +118,12 @@ const Profile = () => {
                              <p className="text-sm text-gray-800 whitespace-pre-wrap break-words line-clamp-2">{item.input}</p>
                         </div>
                      )}
+                    {item.explanation && (
+                        <div className="mt-2">
+                             <p className="text-xs font-medium text-gray-600">Explanation:</p>
+                             <p className="text-sm text-gray-800 whitespace-pre-wrap break-words line-clamp-2">{item.explanation}</p>
+                        </div>
+                    )}
                      {item.output && (
                          <div>
                               <p className="text-xs font-medium text-gray-600">Output:</p>

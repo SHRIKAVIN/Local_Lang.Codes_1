@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Lock, Mail, User, AlertCircle } from 'lucide-react';
-import { API_ENDPOINTS } from '../config';
+import { useAuth } from '../contexts/AuthContext';
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -11,7 +11,8 @@ const Signup = () => {
     confirmPassword: ''
   });
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [success, setSuccess] = useState('');
+  const { signUp, loading } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -23,43 +24,38 @@ const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
     setError('');
+    setSuccess('');
 
     // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
-      setIsLoading(false);
       return;
     }
 
     try {
-      const response = await fetch(API_ENDPOINTS.SIGNUP, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Signup failed');
+      const { data, error: signUpError } = await signUp(
+        formData.email,
+        formData.password,
+        { name: formData.name }
+      );
+      
+      if (signUpError) {
+        throw signUpError;
       }
 
-      // Show success message and redirect to login
-      setError('');
-      alert('Account created successfully! Please login to continue.');
-      navigate('/login');
+      if (data?.user) {
+        if (data.user.email_confirmed_at) {
+          // User is automatically signed in
+          navigate('/');
+        } else {
+          // Email confirmation required
+          setSuccess('Account created successfully! Please check your email to confirm your account before signing in.');
+          setTimeout(() => navigate('/login'), 3000);
+        }
+      }
     } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
+      setError(err.message || 'An error occurred during sign up');
     }
   };
 
@@ -80,6 +76,15 @@ const Signup = () => {
             <span className="sr-only">Danger</span>
             <div>
               <span className="font-medium">Error:</span> {error}
+            </div>
+          </div>
+        )}
+        {success && (
+          <div className="flex items-center p-4 mb-4 text-sm text-green-800 border border-green-300 rounded-lg bg-green-50" role="alert">
+            <AlertCircle className="flex-shrink-0 inline w-4 h-4 me-3" />
+            <span className="sr-only">Success</span>
+            <div>
+              <span className="font-medium">Success:</span> {success}
             </div>
           </div>
         )}
@@ -175,9 +180,9 @@ const Signup = () => {
             <button
               type="submit"
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-              disabled={isLoading}
+              disabled={loading}
             >
-               {isLoading ? 'Signing Up...' : 'Sign Up'}
+               {loading ? 'Signing Up...' : 'Sign Up'}
             </button>
           </div>
         </form>
