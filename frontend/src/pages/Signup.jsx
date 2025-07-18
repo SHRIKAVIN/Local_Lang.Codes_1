@@ -34,25 +34,19 @@ const Signup = () => {
     }
 
     try {
-      const { data, error: signUpError } = await signUp(
-        formData.email,
-        formData.password,
-        { name: formData.name }
-      );
+      const { data, error: signUpError } = await signUp({
+        email: formData.email,
+        password: formData.password,
+        name: formData.name
+      });
       
       if (signUpError) {
         throw signUpError;
       }
 
       if (data?.user) {
-        if (data.user.email_confirmed_at) {
-          // User is automatically signed in
-          navigate('/');
-        } else {
-          // Email confirmation required
-          setSuccess('Account created successfully! Please check your email to confirm your account before signing in.');
-          setTimeout(() => navigate('/login'), 3000);
-        }
+        // User is automatically signed in with SQLite
+        navigate('/');
       }
     } catch (err) {
       setError(err.message || 'An error occurred during sign up');

@@ -15,7 +15,7 @@ const Login = () => {
     setError('');
 
     try {
-      const { data, error: signInError } = await signIn(email, password);
+      const { data, error: signInError } = await signIn({ email, password });
       
       if (signInError) {
         throw signInError;

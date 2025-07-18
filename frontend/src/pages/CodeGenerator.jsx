@@ -4,7 +4,7 @@ import { Zap, Code, FileText, BookOpen, Loader2, Copy, Check, AlertCircle } from
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { darcula } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useAuth } from '../contexts/AuthContext';
-import { saveGenerationHistory } from '../utils/supabase-api';
+import { generationAPI } from '../lib/api';
 
 const CodeGenerator = () => {
   const [userInput, setUserInput] = useState('');
@@ -49,24 +49,20 @@ const CodeGenerator = () => {
     setError('');
     setResult({ translatedPrompt: '', codeOutput: '', explanation: '' });
     try {
-      // TODO: Replace with your backend API call
-      // For now, simulate code generation
-      const mockResult = {
-        translatedPrompt: `Translated: ${userInput}`,
-        codeOutput: `# Generated Python code for: ${userInput}\n\ndef main():\n    print("Hello, World!")\n    # Your code implementation here\n    pass\n\nif __name__ == "__main__":\n    main()`,
-        explanation: `This code demonstrates a basic Python structure for: ${userInput}`
-      };
+      const response = await generationAPI.processGeneration({
+        user_input: userInput,
+        user_language_code: languageCode,
+        choice: 'code'
+      });
       
-      setResult(mockResult);
-      
-      // Save to Supabase history
-      await saveGenerationHistory({
-        type: 'code',
-        input: userInput,
-        output: mockResult.codeOutput,
-        translatedPrompt: mockResult.translatedPrompt,
-        explanation: mockResult.explanation,
-        languageCode: languageCode
+      if (response.error) {
+        throw new Error(response.error);
+      }
+
+      setResult({
+        translatedPrompt: response.translatedPrompt,
+        codeOutput: response.codeOutput,
+        explanation: response.explanation
       });
       
     } catch (err) {
