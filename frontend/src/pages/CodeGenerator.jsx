@@ -4,7 +4,8 @@ import { Zap, Code, FileText, BookOpen, Loader2, Copy, Check, AlertCircle } from
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { darcula } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useAuth } from '../contexts/AuthContext';
-import { generationAPI } from '../lib/api';
+import { authenticatedFetch } from '../utils/api';
+import { API_ENDPOINTS } from '../config';
 
 const CodeGenerator = () => {
   const [userInput, setUserInput] = useState('');
@@ -49,10 +50,16 @@ const CodeGenerator = () => {
     setError('');
     setResult({ translatedPrompt: '', codeOutput: '', explanation: '' });
     try {
-      const response = await generationAPI.processGeneration({
+      const response = await authenticatedFetch(API_ENDPOINTS.PROCESS, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
         user_input: userInput,
         user_language_code: languageCode,
         choice: 'code'
+        }),
       });
       
       if (response.error) {

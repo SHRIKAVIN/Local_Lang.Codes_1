@@ -47,8 +47,7 @@ const Navbar = () => {
         setIsLoadingNotifications(false);
         return;
       }
-      // TODO: Implement notification fetching with Supabase
-      // For now, set empty notifications
+      // TODO: Implement notification fetching with app.py backend
       setNotifications([]);
     } catch (err) {
       console.error('Error fetching notifications:', err);
@@ -210,7 +209,7 @@ const Navbar = () => {
                       aria-labelledby="user-menu-button"
                     >
                       <span className="block px-4 py-2 text-sm text-gray-700">
-                        {user?.user_metadata?.name || user?.email || 'User'}
+                        {user?.name || user?.email || 'User'}
                       </span>
                        <Link
                          to="/profile"
@@ -301,7 +300,7 @@ const Navbar = () => {
             </Link>
             {/* Add other mobile links here if needed */}
           </div>
-           {isLoggedIn ? (
+           {user ? (
              <div className="pt-4 pb-3 border-t border-gray-200">
                <div className="flex items-center px-5">
                  <div className="flex-shrink-0">
@@ -310,7 +309,7 @@ const Navbar = () => {
                  </div>
                  <div className="ml-3">
                    <div className="text-base font-medium text-gray-800">
-                     {user?.user_metadata?.name || user?.email || 'User'}
+                     {user?.name || user?.email || 'User'}
                    </div>
                    <div className="text-sm font-medium text-gray-500">{user?.email || 'N/A'}</div>
                  </div>

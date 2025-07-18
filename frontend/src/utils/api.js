@@ -105,4 +105,4 @@ export const authenticatedFetch = async (url, options = {}) => {
     }
     throw error;
   }
-}; 
+};

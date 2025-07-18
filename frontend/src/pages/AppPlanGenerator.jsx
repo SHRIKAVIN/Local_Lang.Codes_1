@@ -6,7 +6,8 @@ import { saveAs } from 'file-saver';
 import { Disclosure } from '@headlessui/react';
 import { ChevronUpIcon } from '@heroicons/react/20/solid';
 import { useAuth } from '../contexts/AuthContext';
-import { generationAPI } from '../lib/api';
+import { authenticatedFetch } from '../utils/api';
+import { API_ENDPOINTS } from '../config';
 
 const AppPlanGenerator = () => {
   const [userInput, setUserInput] = useState('');
@@ -85,9 +86,15 @@ const AppPlanGenerator = () => {
     setError('');
     setResult({ translatedPrompt: '', appPlanOutput: '' });
     try {
-      const response = await generationAPI.generateAppPlan({
+      const response = await authenticatedFetch(API_ENDPOINTS.GENERATE_APP_PLAN, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
         user_input: userInput,
         user_language_code: languageCode
+        }),
       });
       
       if (response.error) {
@@ -130,8 +137,14 @@ const AppPlanGenerator = () => {
     setCodeGenerationError('');
     setGeneratedCodeResult({ codeOutput: '', explanation: '' });
     try {
-      const response = await generationAPI.generateCodeFromPlan({
+      const response = await authenticatedFetch(API_ENDPOINTS.GENERATE_CODE_FROM_PLAN, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
         app_plan_text: result.appPlanOutput
+        }),
       });
       
       if (response.error) {

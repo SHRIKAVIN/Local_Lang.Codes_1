@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, Clock, Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { profileAPI } from '../lib/api';
+import { authenticatedFetch } from '../utils/api';
+import { API_ENDPOINTS } from '../config';
 
 const Profile = () => {
   const { user, loading } = useAuth();
@@ -22,7 +23,7 @@ const Profile = () => {
       if (!user) return;
       
       try {
-        const response = await profileAPI.getHistory();
+        const response = await authenticatedFetch(API_ENDPOINTS.HISTORY);
         if (response.error) {
           setHistoryError(response.error);
         } else {
@@ -84,7 +85,7 @@ const Profile = () => {
             <div className="space-y-4">
               <div>
                 <p className="text-sm font-medium text-gray-700">Name:</p>
-                <p className="mt-1 text-gray-900">{user.user_metadata?.name || 'Not provided'}</p>
+                <p className="mt-1 text-gray-900">{user.name || 'Not provided'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-700">Email:</p>

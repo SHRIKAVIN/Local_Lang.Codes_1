@@ -1,7 +1,7 @@
-// API Configuration
-export const API_BASE_URL = 'https://local-lang-codes-1-4vgm.onrender.com';  // Update this to match your backend URL
+// API Configuration for app.py backend on Render.com
+export const API_BASE_URL = 'https://local-lang-codes-1-4vgm.onrender.com';
 
-// API Endpoints
+// API Endpoints matching your app.py backend
 export const API_ENDPOINTS = {
   LOGIN: `${API_BASE_URL}/login`,
   SIGNUP: `${API_BASE_URL}/signup`,

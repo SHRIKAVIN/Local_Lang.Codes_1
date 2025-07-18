@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { authAPI } from '../lib/api';
+import { API_ENDPOINTS } from '../config';
 
 const AuthContext = createContext({});
 
@@ -18,18 +18,30 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Check if user is logged in on app start
     const checkAuth = async () => {
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('token');
       if (token) {
         try {
-          const response = await authAPI.getCurrentUser();
-          if (response.user) {
-            setUser(response.user);
+          const response = await fetch(API_ENDPOINTS.USER, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            setUser(data.user);
           } else {
-            localStorage.removeItem('auth_token');
+            // Token is invalid, clear it
+            localStorage.removeItem('token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('user');
           }
         } catch (error) {
           console.error('Auth check failed:', error);
-          localStorage.removeItem('auth_token');
+          localStorage.removeItem('token');
+          localStorage.removeItem('refresh_token');
+          localStorage.removeItem('user');
         }
       }
       setLoading(false);
@@ -41,18 +53,28 @@ export const AuthProvider = ({ children }) => {
   const signUp = async (userData) => {
     try {
       setLoading(true);
-      const response = await authAPI.signup(userData);
+      const response = await fetch(API_ENDPOINTS.SIGNUP, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      const data = await response.json();
       
-      if (response.error) {
-        throw new Error(response.error);
+      if (!response.ok) {
+        throw new Error(data.error || 'Signup failed');
       }
 
-      if (response.token) {
-        localStorage.setItem('auth_token', response.token);
-        setUser(response.user);
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('refresh_token', data.refresh_token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        setUser(data.user);
       }
 
-      return { data: response, error: null };
+      return { data, error: null };
     } catch (error) {
       console.error('Sign up error:', error);
       return { data: null, error };
@@ -64,18 +86,28 @@ export const AuthProvider = ({ children }) => {
   const signIn = async (credentials) => {
     try {
       setLoading(true);
-      const response = await authAPI.signin(credentials);
+      const response = await fetch(API_ENDPOINTS.LOGIN, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credentials),
+      });
+
+      const data = await response.json();
       
-      if (response.error) {
-        throw new Error(response.error);
+      if (!response.ok) {
+        throw new Error(data.error || 'Login failed');
       }
 
-      if (response.token) {
-        localStorage.setItem('auth_token', response.token);
-        setUser(response.user);
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('refresh_token', data.refresh_token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        setUser(data.user);
       }
 
-      return { data: response, error: null };
+      return { data, error: null };
     } catch (error) {
       console.error('Sign in error:', error);
       return { data: null, error };
@@ -87,7 +119,9 @@ export const AuthProvider = ({ children }) => {
   const signOut = async () => {
     try {
       setLoading(true);
-      localStorage.removeItem('auth_token');
+      localStorage.removeItem('token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user');
       setUser(null);
     } catch (error) {
       console.error('Sign out error:', error);
@@ -100,8 +134,7 @@ export const AuthProvider = ({ children }) => {
   const updateProfile = async (updates) => {
     try {
       setLoading(true);
-      // This would typically call the profile API
-      // For now, just update local state
+      // Update local state for now
       setUser(prev => ({ ...prev, ...updates }));
       return { error: null };
     } catch (error) {
