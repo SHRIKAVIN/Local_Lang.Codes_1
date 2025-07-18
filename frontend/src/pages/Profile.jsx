@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, Clock, Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { getGenerationHistory } from '../utils/supabase-api';
+import { profileAPI } from '../lib/api';
 
 const Profile = () => {
   const { user, loading } = useAuth();
@@ -22,11 +22,11 @@ const Profile = () => {
       if (!user) return;
       
       try {
-        const { data, error } = await getGenerationHistory();
-        if (error) {
-          setHistoryError(error.message);
+        const response = await profileAPI.getHistory();
+        if (response.error) {
+          setHistoryError(response.error);
         } else {
-          setHistory(data || []);
+          setHistory(response.history || []);
         }
       } catch (err) {
         setHistoryError('Failed to fetch generation history.');
